@@ -105,3 +105,35 @@ def test_dealer_blackjack_probability_is_exact() -> None:
     )
     assert dealer_blackjack_probability(composition, CardValue.ACE) == Fraction(1, 2)
     assert dealer_blackjack_probability(composition, CardValue.SIX) == 0
+
+
+def test_unseen_burn_card_is_marginalized_not_exposed() -> None:
+    composition = Composition.from_values(
+        (
+            CardValue.ACE,
+            CardValue.TWO,
+            CardValue.THREE,
+            CardValue.SEVEN,
+            CardValue.TEN,
+        )
+    )
+    draws = hidden_hole_draws(
+        composition,
+        CardValue.TEN,
+        PeekCondition.NO_BLACKJACK,
+        unseen_unavailable=1,
+    )
+    assert (
+        sum(
+            (draw.probability for draw in draws),
+            start=Fraction(0),
+        )
+        == 1
+    )
+    distribution = dealer_distribution(
+        composition,
+        CardValue.TEN,
+        PeekCondition.NO_BLACKJACK,
+        unseen_unavailable=1,
+    )
+    assert distribution.probability(DealerOutcome.BLACKJACK) == 0

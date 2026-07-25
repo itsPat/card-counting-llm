@@ -94,10 +94,15 @@ class PlayerSituation:
     dealer_upcard: CardValue
     peek_condition: PeekCondition
     rules: CasinoRules = FIXED_RULES
+    unseen_unavailable: int = 0
 
     def __post_init__(self) -> None:
         if self.composition.total == 0:
             raise ValueError("composition must include the hidden dealer card")
+        if self.unseen_unavailable < 0:
+            raise ValueError("unseen unavailable card count cannot be negative")
+        if self.composition.total <= self.unseen_unavailable:
+            raise ValueError("composition must leave a possible dealer hole card")
         if (
             self.dealer_upcard in (CardValue.ACE, CardValue.TEN)
             and self.peek_condition is PeekCondition.NONE
@@ -176,6 +181,7 @@ def evaluate_actions(
                 (),
                 action,
                 situation.rules,
+                situation.unseen_unavailable,
             ),
         )
         for action in actions
@@ -200,6 +206,7 @@ def optimal_return_distribution(
         (),
         (),
         situation.rules,
+        situation.unseen_unavailable,
     )
 
 
@@ -212,6 +219,7 @@ def _optimal_distribution(
     pending: tuple[OracleHand, ...],
     finished: tuple[ResolvedHand, ...],
     rules: CasinoRules,
+    unseen_unavailable: int,
 ) -> ReturnDistribution:
     if active.value.is_bust or active.value.total >= 21 or active.split_aces:
         return _advance(
@@ -221,6 +229,7 @@ def _optimal_distribution(
             pending,
             (*finished, ResolvedHand(active)),
             rules,
+            unseen_unavailable,
         )
     actions = _legal_actions(
         active,
@@ -235,6 +244,7 @@ def _optimal_distribution(
             pending,
             (*finished, ResolvedHand(active)),
             rules,
+            unseen_unavailable,
         )
     choices = tuple(
         _take_action(
@@ -246,6 +256,7 @@ def _optimal_distribution(
             finished,
             action,
             rules,
+            unseen_unavailable,
         )
         for action in actions
     )
@@ -262,6 +273,7 @@ def _take_action(
     finished: tuple[ResolvedHand, ...],
     action: PlayerAction,
     rules: CasinoRules,
+    unseen_unavailable: int,
 ) -> ReturnDistribution:
     hands_in_round = len(finished) + len(pending) + 1
     if action not in _legal_actions(active, hands_in_round, rules):
@@ -275,6 +287,7 @@ def _take_action(
             pending,
             (*finished, ResolvedHand(active)),
             rules,
+            unseen_unavailable,
         )
     if action is PlayerAction.SURRENDER:
         return _advance(
@@ -284,9 +297,15 @@ def _take_action(
             pending,
             (*finished, ResolvedHand(active, surrendered=True)),
             rules,
+            unseen_unavailable,
         )
 
-    draws = hidden_hole_draws(composition, upcard, condition)
+    draws = hidden_hole_draws(
+        composition,
+        upcard,
+        condition,
+        unseen_unavailable,
+    )
     if not draws:
         raise ValueError("the player must draw but no shoe card is available")
     if action is PlayerAction.HIT:
@@ -301,6 +320,7 @@ def _take_action(
                     pending,
                     finished,
                     rules,
+                    unseen_unavailable,
                 ),
             )
             for draw in draws
@@ -322,6 +342,7 @@ def _take_action(
                     pending,
                     (*finished, ResolvedHand(doubled.add(draw.value))),
                     rules,
+                    unseen_unavailable,
                 ),
             )
             for draw in draws
@@ -334,6 +355,7 @@ def _take_action(
         pending,
         finished,
         rules,
+        unseen_unavailable,
     )
 
 
@@ -345,6 +367,7 @@ def _split_distribution(
     pending: tuple[OracleHand, ...],
     finished: tuple[ResolvedHand, ...],
     rules: CasinoRules,
+    unseen_unavailable: int,
 ) -> ReturnDistribution:
     pair_value = active.cards[0]
     split_aces = pair_value is CardValue.ACE
@@ -357,12 +380,18 @@ def _split_distribution(
         can_surrender=False,
     )
     branches: list[tuple[Fraction, ReturnDistribution]] = []
-    for left_draw in hidden_hole_draws(composition, upcard, condition):
+    for left_draw in hidden_hole_draws(
+        composition,
+        upcard,
+        condition,
+        unseen_unavailable,
+    ):
         left = base.add_split_card(left_draw.value)
         for right_draw in hidden_hole_draws(
             left_draw.composition,
             upcard,
             condition,
+            unseen_unavailable,
         ):
             right = base.add_split_card(right_draw.value)
             probability = left_draw.probability * right_draw.probability
@@ -378,6 +407,7 @@ def _split_distribution(
                         ResolvedHand(right),
                     ),
                     rules,
+                    unseen_unavailable,
                 )
             else:
                 distribution = _optimal_distribution(
@@ -388,6 +418,7 @@ def _split_distribution(
                     (right, *pending),
                     finished,
                     rules,
+                    unseen_unavailable,
                 )
             branches.append((probability, distribution))
     return ReturnDistribution.mixture(branches)
@@ -400,6 +431,7 @@ def _advance(
     pending: tuple[OracleHand, ...],
     finished: tuple[ResolvedHand, ...],
     rules: CasinoRules,
+    unseen_unavailable: int,
 ) -> ReturnDistribution:
     if pending:
         return _optimal_distribution(
@@ -410,8 +442,16 @@ def _advance(
             pending[1:],
             finished,
             rules,
+            unseen_unavailable,
         )
-    return _settle_finished(composition, upcard, condition, finished, rules)
+    return _settle_finished(
+        composition,
+        upcard,
+        condition,
+        finished,
+        rules,
+        unseen_unavailable,
+    )
 
 
 @cache
@@ -421,6 +461,7 @@ def _settle_finished(
     condition: PeekCondition,
     finished: tuple[ResolvedHand, ...],
     rules: CasinoRules,
+    unseen_unavailable: int,
 ) -> ReturnDistribution:
     if all(
         resolved.surrendered or resolved.hand.value.is_bust for resolved in finished
@@ -431,7 +472,13 @@ def _settle_finished(
                 start=Fraction(0),
             )
         )
-    dealer = dealer_distribution(composition, upcard, condition, rules)
+    dealer = dealer_distribution(
+        composition,
+        upcard,
+        condition,
+        rules,
+        unseen_unavailable,
+    )
     return ReturnDistribution.from_pairs(
         (
             sum(

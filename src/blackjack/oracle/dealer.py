@@ -66,6 +66,12 @@ class DealerDistribution:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class CompositionProbability:
+    composition: Composition
+    probability: Fraction
+
+
 def _hole_is_allowed(
     hole: CardValue,
     upcard: CardValue,
@@ -92,13 +98,11 @@ def _eligible_hole_total(
     )
 
 
-def hidden_hole_draws(
+def _hidden_hole_draws_without_unavailable(
     composition: Composition,
     upcard: CardValue,
     condition: PeekCondition,
 ) -> tuple[Draw, ...]:
-    """Distribution of the next visible card while one hole card stays hidden."""
-
     if composition.total < 2:
         return ()
     eligible_holes = _eligible_hole_total(composition, upcard, condition)
@@ -122,17 +126,129 @@ def hidden_hole_draws(
     return tuple(draws)
 
 
+@cache
+def _unavailable_branches(
+    composition: Composition,
+    unseen_unavailable: int,
+) -> tuple[CompositionProbability, ...]:
+    if unseen_unavailable < 0:
+        raise ValueError("unseen unavailable card count cannot be negative")
+    if unseen_unavailable == 0:
+        return (CompositionProbability(composition, Fraction(1)),)
+    if composition.total <= unseen_unavailable:
+        raise ValueError("unavailable cards leave no possible dealer hole card")
+    merged: defaultdict[Composition, Fraction] = defaultdict(Fraction)
+    for draw in composition.draws():
+        for child in _unavailable_branches(
+            draw.composition,
+            unseen_unavailable - 1,
+        ):
+            merged[child.composition] += draw.probability * child.probability
+    return tuple(
+        CompositionProbability(latent, probability)
+        for latent, probability in merged.items()
+    )
+
+
+def _conditioned_unavailable_branches(
+    composition: Composition,
+    upcard: CardValue,
+    condition: PeekCondition,
+    unseen_unavailable: int,
+) -> tuple[CompositionProbability, ...]:
+    weighted: list[tuple[Composition, Fraction]] = []
+    normalizer = Fraction(0)
+    for branch in _unavailable_branches(composition, unseen_unavailable):
+        likelihood = (
+            Fraction(1)
+            if condition is PeekCondition.NONE
+            else Fraction(
+                _eligible_hole_total(branch.composition, upcard, condition),
+                branch.composition.total,
+            )
+        )
+        weight = branch.probability * likelihood
+        if weight > 0:
+            weighted.append((branch.composition, weight))
+            normalizer += weight
+    if normalizer == 0:
+        raise ValueError("hidden cards are incompatible with the peek condition")
+    return tuple(
+        CompositionProbability(latent, weight / normalizer)
+        for latent, weight in weighted
+    )
+
+
+def hidden_hole_draws(
+    composition: Composition,
+    upcard: CardValue,
+    condition: PeekCondition,
+    unseen_unavailable: int = 0,
+) -> tuple[Draw, ...]:
+    """Next visible card while the hole and other unseen cards stay unavailable."""
+
+    if unseen_unavailable == 0:
+        return _hidden_hole_draws_without_unavailable(
+            composition,
+            upcard,
+            condition,
+        )
+    merged: defaultdict[CardValue, Fraction] = defaultdict(Fraction)
+    for branch in _conditioned_unavailable_branches(
+        composition,
+        upcard,
+        condition,
+        unseen_unavailable,
+    ):
+        for draw in _hidden_hole_draws_without_unavailable(
+            branch.composition,
+            upcard,
+            condition,
+        ):
+            merged[draw.value] += branch.probability * draw.probability
+    return tuple(
+        Draw(
+            value=value,
+            probability=probability,
+            composition=composition.remove(value),
+        )
+        for value, probability in sorted(
+            merged.items(),
+            key=lambda item: item[0].value,
+        )
+    )
+
+
 def dealer_blackjack_probability(
     composition: Composition,
     upcard: CardValue,
+    unseen_unavailable: int = 0,
 ) -> Fraction:
-    if composition.total == 0:
+    if composition.total <= unseen_unavailable:
         raise ValueError("the dealer needs a possible hole card")
-    if upcard is CardValue.ACE:
-        return Fraction(composition.count(CardValue.TEN), composition.total)
-    if upcard is CardValue.TEN:
-        return Fraction(composition.count(CardValue.ACE), composition.total)
-    return Fraction(0)
+    target = (
+        CardValue.TEN
+        if upcard is CardValue.ACE
+        else CardValue.ACE
+        if upcard is CardValue.TEN
+        else None
+    )
+    if target is None:
+        return Fraction(0)
+    return sum(
+        (
+            branch.probability
+            * Fraction(
+                branch.composition.count(target),
+                branch.composition.total,
+            )
+            for branch in _unavailable_branches(
+                composition,
+                unseen_unavailable,
+            )
+        ),
+        start=Fraction(0),
+    )
 
 
 def _hand_value(hard_total: int, aces: int) -> tuple[int, bool]:
@@ -185,14 +301,12 @@ def _play_dealer(
 
 
 @cache
-def dealer_distribution(
+def _dealer_distribution_without_unavailable(
     composition: Composition,
     upcard: CardValue,
-    condition: PeekCondition = PeekCondition.NONE,
-    rules: CasinoRules = FIXED_RULES,
+    condition: PeekCondition,
+    rules: CasinoRules,
 ) -> DealerDistribution:
-    """Average dealer play over every hole card compatible with the public state."""
-
     eligible_total = _eligible_hole_total(composition, upcard, condition)
     if eligible_total == 0:
         raise ValueError("no dealer hole card is compatible with this state")
@@ -215,6 +329,49 @@ def dealer_distribution(
         )
         for item in child:
             merged[item.outcome] += hole_probability * item.probability
+    return DealerDistribution(
+        tuple(
+            DealerOutcomeProbability(outcome, probability)
+            for outcome, probability in sorted(
+                merged.items(),
+                key=lambda item: item[0].value,
+            )
+        )
+    )
+
+
+@cache
+def dealer_distribution(
+    composition: Composition,
+    upcard: CardValue,
+    condition: PeekCondition = PeekCondition.NONE,
+    rules: CasinoRules = FIXED_RULES,
+    unseen_unavailable: int = 0,
+) -> DealerDistribution:
+    """Average dealer play over every publicly possible hidden-card assignment."""
+
+    if unseen_unavailable == 0:
+        return _dealer_distribution_without_unavailable(
+            composition,
+            upcard,
+            condition,
+            rules,
+        )
+    merged: defaultdict[DealerOutcome, Fraction] = defaultdict(Fraction)
+    for branch in _conditioned_unavailable_branches(
+        composition,
+        upcard,
+        condition,
+        unseen_unavailable,
+    ):
+        child = _dealer_distribution_without_unavailable(
+            branch.composition,
+            upcard,
+            condition,
+            rules,
+        )
+        for item in child.outcomes:
+            merged[item.outcome] += branch.probability * item.probability
     return DealerDistribution(
         tuple(
             DealerOutcomeProbability(outcome, probability)

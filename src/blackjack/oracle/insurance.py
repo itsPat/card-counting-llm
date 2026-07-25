@@ -25,12 +25,14 @@ class InsuranceEvaluation:
 def evaluate_insurance(
     composition: Composition,
     dealer_upcard: CardValue,
+    unseen_unavailable: int = 0,
 ) -> tuple[InsuranceEvaluation, InsuranceEvaluation]:
     if dealer_upcard is not CardValue.ACE:
         raise ValueError("insurance is offered only against a dealer Ace")
     blackjack_probability = dealer_blackjack_probability(
         composition,
         dealer_upcard,
+        unseen_unavailable,
     )
     take = InsuranceEvaluation(
         action=InsuranceAction.TAKE,
@@ -53,6 +55,11 @@ def evaluate_insurance(
 def optimal_insurance(
     composition: Composition,
     dealer_upcard: CardValue,
+    unseen_unavailable: int = 0,
 ) -> InsuranceEvaluation:
-    take, decline = evaluate_insurance(composition, dealer_upcard)
+    take, decline = evaluate_insurance(
+        composition,
+        dealer_upcard,
+        unseen_unavailable,
+    )
     return take if take.expected_profit > 0 else decline
