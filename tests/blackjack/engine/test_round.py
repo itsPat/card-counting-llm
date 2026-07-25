@@ -17,7 +17,7 @@ from blackjack import (
     Shoe,
     cards,
 )
-from blackjack.settlement import HandOutcome, InsuranceOutcome
+from blackjack.engine.settlement import HandOutcome, InsuranceOutcome
 
 
 def arranged_round(

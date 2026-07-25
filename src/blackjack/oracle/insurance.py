@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from fractions import Fraction
 
-from blackjack.actions import InsuranceAction
+from blackjack.engine.actions import InsuranceAction
 from blackjack.oracle.composition import CardValue, Composition
 from blackjack.oracle.dealer import dealer_blackjack_probability
 from blackjack.oracle.distributions import ReturnDistribution

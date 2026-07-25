@@ -8,13 +8,13 @@ from enum import StrEnum
 from fractions import Fraction
 from functools import cache
 
+from blackjack.engine.rules import FIXED_RULES, CasinoRules
 from blackjack.oracle.composition import (
     CARD_VALUES,
     CardValue,
     Composition,
     Draw,
 )
-from blackjack.rules import FIXED_RULES, CasinoRules
 
 
 class PeekCondition(StrEnum):

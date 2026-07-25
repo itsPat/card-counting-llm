@@ -8,8 +8,8 @@ from dataclasses import dataclass
 from math import ceil, floor
 from random import Random
 
-from blackjack.cards import Card, Rank
-from blackjack.rules import FIXED_RULES, CasinoRules
+from blackjack.engine.cards import Card, Rank
+from blackjack.engine.rules import FIXED_RULES, CasinoRules
 
 DEFAULT_BURN_CARD = Card(Rank.TWO)
 

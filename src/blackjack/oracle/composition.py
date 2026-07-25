@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from fractions import Fraction
 
-from blackjack.cards import Card, Rank
+from blackjack.engine.cards import Card, Rank
 
 
 class CardValue(StrEnum):

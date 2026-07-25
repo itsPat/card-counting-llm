@@ -5,7 +5,7 @@ from fractions import Fraction
 import pytest
 
 from blackjack import Hand, cards
-from blackjack.settlement import (
+from blackjack.engine.settlement import (
     HandOutcome,
     InsuranceOutcome,
     settle_hand,

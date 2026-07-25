@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from fractions import Fraction
 
-from blackjack.hands import Hand
-from blackjack.rules import FIXED_RULES, CasinoRules
+from blackjack.engine.hands import Hand
+from blackjack.engine.rules import FIXED_RULES, CasinoRules
 
 
 class HandOutcome(StrEnum):

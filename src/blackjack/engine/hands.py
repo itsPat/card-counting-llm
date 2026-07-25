@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from blackjack.cards import Card
+from blackjack.engine.cards import Card
 
 
 @dataclass(frozen=True, slots=True)

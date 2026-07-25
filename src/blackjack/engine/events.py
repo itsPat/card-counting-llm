@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from fractions import Fraction
 
-from blackjack.actions import InsuranceAction, PlayerAction
-from blackjack.cards import Card
+from blackjack.engine.actions import InsuranceAction, PlayerAction
+from blackjack.engine.cards import Card
 
 
 class EventType(StrEnum):

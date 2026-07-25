@@ -6,7 +6,8 @@ from dataclasses import dataclass, replace
 from fractions import Fraction
 from functools import cache
 
-from blackjack.actions import PlayerAction
+from blackjack.engine.actions import PlayerAction
+from blackjack.engine.rules import FIXED_RULES, CasinoRules
 from blackjack.oracle.composition import (
     CardValue,
     Composition,
@@ -19,7 +20,6 @@ from blackjack.oracle.dealer import (
     hidden_hole_draws,
 )
 from blackjack.oracle.distributions import ReturnDistribution
-from blackjack.rules import FIXED_RULES, CasinoRules
 
 
 @dataclass(frozen=True, slots=True)

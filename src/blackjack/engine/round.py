@@ -6,24 +6,29 @@ from collections import Counter
 from dataclasses import dataclass
 from fractions import Fraction
 
-from blackjack.actions import DecisionType, InsuranceAction, PlayerAction, RoundPhase
-from blackjack.cards import Card, Rank
-from blackjack.events import (
+from blackjack.engine.actions import (
+    DecisionType,
+    InsuranceAction,
+    PlayerAction,
+    RoundPhase,
+)
+from blackjack.engine.cards import Card, Rank
+from blackjack.engine.events import (
     EventType,
     EventVisibility,
     InternalEvent,
     PublicEvent,
     public_events,
 )
-from blackjack.hands import Hand, HandValue, calculate_hand_value
-from blackjack.rules import FIXED_RULES, CasinoRules
-from blackjack.settlement import (
+from blackjack.engine.hands import Hand, HandValue, calculate_hand_value
+from blackjack.engine.rules import FIXED_RULES, CasinoRules
+from blackjack.engine.settlement import (
     HandOutcome,
     RoundSettlement,
     settle_hand,
     settle_insurance,
 )
-from blackjack.shoe import Shoe
+from blackjack.engine.shoe import Shoe
 
 
 class BlackjackStateError(RuntimeError):
