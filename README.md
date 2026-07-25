@@ -236,6 +236,27 @@ intuition.
 
 ---
 
+## Local Development
+
+Install the project and every development/notebook dependency:
+
+```bash
+uv sync --all-groups
+```
+
+In VS Code, select `.venv/bin/python` as the Python interpreter. Then run:
+
+```bash
+uv run pytest
+uv run pyright
+uv run ruff check .
+```
+
+Open `notebooks/01_blackjack_engine.ipynb` in VS Code and select the same
+`.venv/bin/python` environment to run the visual engine walkthrough.
+
+---
+
 ## TODOs
 
 ### 1. Define the Experiment
@@ -249,23 +270,23 @@ intuition.
 
 ### 2. Build the Blackjack Engine
 
-- [ ] Represent cards, hands, a six-deck shoe, and visible card history.
-- [ ] Implement deterministic shuffling and seeded replay.
-- [ ] Implement hand totals, soft Aces, naturals, and busts.
-- [ ] Implement the complete round state machine.
-  - [ ] Initial deal and hidden dealer hole card
-  - [ ] Dealer peek
-  - [ ] Insurance
-  - [ ] Hit and stand
-  - [ ] Double down
-  - [ ] Splitting and split-hand limits
-  - [ ] Split-Ace restrictions
-  - [ ] Late surrender
-  - [ ] Dealer play
-  - [ ] Settlement and payouts
-- [ ] Produce a complete internal event log for debugging and visualization.
-- [ ] Produce the minimal model context from the internal game state.
-- [ ] Test every rule and payout boundary.
+- [x] Represent cards, hands, a six-deck shoe, and visible card history.
+- [x] Implement deterministic shuffling and seeded replay.
+- [x] Implement hand totals, soft Aces, naturals, and busts.
+- [x] Implement the complete round state machine.
+  - [x] Initial deal and hidden dealer hole card
+  - [x] Dealer peek
+  - [x] Insurance
+  - [x] Hit and stand
+  - [x] Double down
+  - [x] Splitting and split-hand limits
+  - [x] Split-Ace restrictions
+  - [x] Late surrender
+  - [x] Dealer play
+  - [x] Settlement and payouts
+- [x] Produce a complete internal event log for debugging and visualization.
+- [x] Produce the minimal model context from the internal game state.
+- [x] Test every rule and payout boundary.
 
 ### 3. Build the Blackjack Oracle
 
