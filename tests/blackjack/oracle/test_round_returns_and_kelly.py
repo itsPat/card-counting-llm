@@ -70,6 +70,16 @@ def test_kelly_matches_the_closed_form_even_money_case() -> None:
     )
 
 
+def test_kelly_allows_a_zero_wagering_cap() -> None:
+    biased = ReturnDistribution.from_pairs(
+        ((Fraction(-1), Fraction(2, 5)), (Fraction(1), Fraction(3, 5)))
+    )
+    recommendation = kelly_recommendation(biased, maximum_fraction=0)
+    assert recommendation.full_kelly == 0
+    assert recommendation.half_kelly == 0
+    assert recommendation.expected_log_growth == 0
+
+
 def test_kelly_respects_multi_unit_split_and_double_exposure() -> None:
     distribution = ReturnDistribution.from_pairs(
         ((Fraction(-4), Fraction(1, 10)), (Fraction(1), Fraction(9, 10)))

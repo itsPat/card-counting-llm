@@ -48,8 +48,8 @@ def kelly_recommendation(
     maximum_fraction: float = 1.0,
     iterations: int = 100,
 ) -> KellyRecommendation:
-    if not 0 < maximum_fraction <= 1:
-        raise ValueError("maximum fraction must lie in (0, 1]")
+    if not 0 <= maximum_fraction <= 1:
+        raise ValueError("maximum fraction must lie in [0, 1]")
     if iterations <= 0:
         raise ValueError("iteration count must be positive")
     if distribution.expected_profit <= 0:
