@@ -42,8 +42,7 @@ free-form text generation.
 
 The transformer will predict exactly one special decision token at a time:
 
-- Bet tokens: a discrete set of bankroll fractions to be selected through a
-  pilot analysis
+- Bet tokens: `<BET_MIN>`, `<BET_LOW>`, `<BET_MEDIUM>`, or `<BET_HIGH>`
 - Play tokens: `<HIT>`, `<STAND>`, `<DOUBLE>`, `<SPLIT>`, or `<SURRENDER>`
 - Insurance tokens: `<INSURANCE>` or `<NO_INSURANCE>`
 
@@ -228,6 +227,59 @@ half-Kelly fractions produced by representative shoe compositions. This avoids
 choosing the minimum, maximum, or spacing of the betting vocabulary by
 intuition.
 
+#### Bet-Token Pilot Methodology and Scoped Approximation
+
+The pilot uses 96 pre-deal compositions sampled from 24 deterministic six-deck
+shoes. Four samples from each shoe are stratified across the playable
+penetration range. For each composition, I simulate 25,000 complete rounds, for
+2.4 million seeded rollouts in total. The simulator retains the complete return
+outcomes produced by naturals, ordinary wins and losses, pushes, surrender,
+insurance, doubles, and correlated split hands.
+
+I make one explicit approximation for this pilot: rollout play follows the
+[Blackjack Apprenticeship H17 basic-strategy chart](https://www.blackjackapprenticeship.com/wp-content/uploads/2024/09/H17-Basic-Strategy.pdf),
+including double after split and late surrender, instead of recomputing the
+exact composition-dependent optimal policy inside every rollout. Exact
+rational enumeration of a realistic composition with sequential split-hand
+correlations takes longer than one minute per state, which makes a
+representative batch impractical at this stage. Insurance remains
+composition-dependent because its exact decision is the inexpensive comparison
+between the visible ten-valued-card probability and the one-third break-even
+threshold.
+
+This concession is limited to vocabulary design. The pilot is estimating a
+useful bet range and resolution; it is not producing final training labels.
+The dataset pipeline will continue to use the exact composition-dependent
+oracle for bet, insurance, and play targets. The pilot is deterministic from
+its configuration, reports Monte Carlo standard errors, and keeps the
+continuous return distributions available for inspecting sampling error.
+
+The observed continuous half-Kelly fractions ranged from 0% to 1.208% of
+bankroll. The mean standard error of the simulated expected return was 0.721
+percentage points, so a very fine token grid would claim more precision than
+the pilot supports. I selected the smallest candidate vocabulary that covered
+the observed range, populated every class, and kept the 95th-percentile
+absolute rounding error below 0.15 percentage points:
+
+The token names are intentionally categorical. Their bankroll fractions are a
+versioned experiment mapping rather than semantics the transformer is expected
+to infer from token spelling. Changing the mapping requires regenerating the
+dataset and retraining the model.
+
+| Token | Bankroll fraction |
+| --- | ---: |
+| `<BET_MIN>` | 0.10% |
+| `<BET_LOW>` | 0.50% |
+| `<BET_MEDIUM>` | 0.90% |
+| `<BET_HIGH>` | 1.30% |
+
+Across the 96 sampled compositions, the four classes contained 83, 10, 1, and
+2 examples. The imbalance is itself useful evidence: most representative
+states have no estimated positive edge and therefore map to the minimum wager.
+The pilot notebook compares this vocabulary against finer grids and shows that
+additional classes improve rounding error less than the Monte Carlo
+uncertainty would justify.
+
 ### Training
 
 ### Evaluation
@@ -252,8 +304,9 @@ uv run pyright
 uv run ruff check .
 ```
 
-Open `notebooks/01_blackjack_engine.ipynb` in VS Code and select the same
-`.venv/bin/python` environment to run the visual engine walkthrough.
+Open `notebooks/01_blackjack_engine.ipynb` for the visual engine walkthrough or
+`notebooks/02_bet_token_pilot.ipynb` for the reproducible bet-vocabulary
+analysis. Select the same `.venv/bin/python` environment for either notebook.
 
 ---
 
@@ -307,14 +360,14 @@ The six-deck validation fixtures use the independently published
 
 ### 4. Run the Bet-Token Pilot Analysis
 
-- [ ] Sample representative pre-deal shoe compositions.
-- [ ] Plot the distribution of continuous half-Kelly fractions.
-- [ ] Compare candidate minimum bets, maximum bets, and token spacing.
-- [ ] Measure rounding error and expected log-growth regret for each candidate
+- [x] Sample representative pre-deal shoe compositions.
+- [x] Plot the distribution of continuous half-Kelly fractions.
+- [x] Compare candidate minimum bets, maximum bets, and token spacing.
+- [x] Measure rounding error and expected log-growth regret for each candidate
       vocabulary.
-- [ ] Measure the number of examples that would belong to each bet class.
-- [ ] Select the smallest bet vocabulary that preserves meaningful precision.
-- [ ] Document the selected bet tokens and their bankroll fractions.
+- [x] Measure the number of examples that would belong to each bet class.
+- [x] Select the smallest bet vocabulary that preserves meaningful precision.
+- [x] Document the selected bet tokens and their bankroll fractions.
 
 ### 5. Build the Dataset Pipeline
 

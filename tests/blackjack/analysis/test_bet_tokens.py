@@ -4,6 +4,7 @@ import pytest
 
 from blackjack.analysis import (
     SELECTED_BET_VOCABULARY,
+    BetAction,
     BetVocabulary,
     EmpiricalReturnDistribution,
     EmpiricalReturnOutcome,
@@ -112,13 +113,9 @@ def test_candidate_vocabularies_have_stable_unique_tokens() -> None:
     vocabularies = candidate_vocabularies()
     assert SELECTED_BET_VOCABULARY in vocabularies
     assert [token.token for token in SELECTED_BET_VOCABULARY.tokens] == [
-        "<BET_0_10_PCT>",
-        "<BET_0_50_PCT>",
-        "<BET_0_90_PCT>",
-        "<BET_1_30_PCT>",
+        BetAction.MINIMUM,
+        BetAction.LOW,
+        BetAction.MEDIUM,
+        BetAction.HIGH,
     ]
     assert len({vocabulary.name for vocabulary in vocabularies}) == len(vocabularies)
-    for vocabulary in vocabularies:
-        assert len({token.token for token in vocabulary.tokens}) == len(
-            vocabulary.tokens
-        )

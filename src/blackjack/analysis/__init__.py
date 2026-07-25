@@ -2,6 +2,7 @@
 
 from blackjack.analysis.bet_tokens import (
     SELECTED_BET_VOCABULARY,
+    BetAction,
     BetToken,
     BetVocabulary,
     EmpiricalReturnDistribution,
@@ -19,6 +20,7 @@ from blackjack.analysis.bet_tokens import (
 
 __all__ = [
     "SELECTED_BET_VOCABULARY",
+    "BetAction",
     "BetToken",
     "BetVocabulary",
     "EmpiricalReturnDistribution",

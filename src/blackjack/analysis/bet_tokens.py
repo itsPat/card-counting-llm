@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
+from enum import StrEnum
 from math import floor, isclose, log, sqrt
 from random import Random
 
@@ -102,9 +103,16 @@ class PilotObservation:
     half_kelly: float
 
 
+class BetAction(StrEnum):
+    MINIMUM = "<BET_MIN>"
+    LOW = "<BET_LOW>"
+    MEDIUM = "<BET_MEDIUM>"
+    HIGH = "<BET_HIGH>"
+
+
 @dataclass(frozen=True, slots=True)
 class BetToken:
-    token: str
+    token: BetAction
     bankroll_fraction: float
 
 
@@ -112,6 +120,7 @@ class BetToken:
 class BetVocabulary:
     name: str
     fractions: tuple[float, ...]
+    actions: tuple[BetAction, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.fractions:
@@ -120,15 +129,25 @@ class BetVocabulary:
             raise ValueError("bet fractions must lie in (0, 1]")
         if self.fractions != tuple(sorted(set(self.fractions))):
             raise ValueError("bet fractions must be unique and increasing")
+        if self.actions and len(self.actions) != len(self.fractions):
+            raise ValueError("bet actions and fractions must have equal lengths")
+        if len(set(self.actions)) != len(self.actions):
+            raise ValueError("bet actions must be unique")
 
     @property
     def tokens(self) -> tuple[BetToken, ...]:
+        if not self.actions:
+            raise ValueError("candidate vocabulary has no serialized bet actions")
         return tuple(
             BetToken(
-                token=(f"<BET_{fraction * 100:.2f}_PCT>".replace(".", "_")),
+                token=action,
                 bankroll_fraction=fraction,
             )
-            for fraction in self.fractions
+            for action, fraction in zip(
+                self.actions,
+                self.fractions,
+                strict=True,
+            )
         )
 
     def nearest_fraction(self, target: float) -> float:
@@ -141,6 +160,12 @@ class BetVocabulary:
 SELECTED_BET_VOCABULARY = BetVocabulary(
     "selected-four-token",
     (0.001, 0.005, 0.009, 0.013),
+    (
+        BetAction.MINIMUM,
+        BetAction.LOW,
+        BetAction.MEDIUM,
+        BetAction.HIGH,
+    ),
 )
 
 
