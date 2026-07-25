@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from fractions import Fraction
 
 from blackjack.actions import InsuranceAction, PlayerAction
 from blackjack.cards import Card
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     SHOE_BURNED = "shoe_burned"
     PLAYER_CARD_DEALT = "player_card_dealt"
     DEALER_UPCARD_DEALT = "dealer_upcard_dealt"
@@ -24,7 +24,7 @@ class EventType(str, Enum):
     ROUND_SETTLED = "round_settled"
 
 
-class EventVisibility(str, Enum):
+class EventVisibility(StrEnum):
     INTERNAL = "internal"
     PUBLIC = "public"
 

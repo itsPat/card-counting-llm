@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
 
 from blackjack.cards import Card
 
@@ -45,11 +45,7 @@ class Hand:
 
     @property
     def is_natural_blackjack(self) -> bool:
-        return (
-            not self.from_split
-            and len(self.cards) == 2
-            and self.value.total == 21
-        )
+        return not self.from_split and len(self.cards) == 2 and self.value.total == 21
 
     @property
     def is_pair(self) -> bool:

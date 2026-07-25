@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from fractions import Fraction
 
 from blackjack.hands import Hand
-from blackjack.rules import CasinoRules, FIXED_RULES
+from blackjack.rules import FIXED_RULES, CasinoRules
 
 
-class HandOutcome(str, Enum):
+class HandOutcome(StrEnum):
     BLACKJACK = "blackjack"
     WIN = "win"
     LOSS = "loss"
@@ -19,7 +19,7 @@ class HandOutcome(str, Enum):
     BUST = "bust"
 
 
-class InsuranceOutcome(str, Enum):
+class InsuranceOutcome(StrEnum):
     WON = "won"
     LOST = "lost"
 

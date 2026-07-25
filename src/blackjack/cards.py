@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class Rank(str, Enum):
+class Rank(StrEnum):
     """The thirteen ranks in a standard deck.
 
     Suits are intentionally absent: without side bets, they cannot affect a

@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Iterable
 from dataclasses import dataclass
 from random import Random
-from typing import Iterable
 
 from blackjack.cards import Card, Rank
-from blackjack.rules import CasinoRules, FIXED_RULES
+from blackjack.rules import FIXED_RULES, CasinoRules
+
+DEFAULT_BURN_CARD = Card(Rank.TWO)
 
 
 class ShoeExhaustedError(RuntimeError):
@@ -61,11 +63,7 @@ class Shoe:
         rules: CasinoRules = FIXED_RULES,
     ) -> Shoe:
         rng = Random(seed)
-        cards = [
-            Card(rank)
-            for rank in Rank
-            for _ in range(4 * rules.decks)
-        ]
+        cards = [Card(rank) for rank in Rank for _ in range(4 * rules.decks)]
         rng.shuffle(cards)
         low = float(rules.minimum_penetration)
         high = float(rules.maximum_penetration)
@@ -82,7 +80,7 @@ class Shoe:
         cls,
         deal_order: Iterable[Card],
         *,
-        burn_card: Card = Card(Rank.TWO),
+        burn_card: Card = DEFAULT_BURN_CARD,
         cut_card_position: int | None = None,
     ) -> Shoe:
         """Build a compact deliberate replay for a deterministic rule example."""

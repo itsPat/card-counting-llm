@@ -15,7 +15,7 @@ from blackjack.events import (
     public_events,
 )
 from blackjack.hands import Hand, HandValue, calculate_hand_value
-from blackjack.rules import CasinoRules, FIXED_RULES
+from blackjack.rules import FIXED_RULES, CasinoRules
 from blackjack.settlement import (
     HandOutcome,
     RoundSettlement,
@@ -426,9 +426,7 @@ class BlackjackRound:
     def _dealer_should_hit(self) -> bool:
         value = self._dealer_hand.value
         return value.total < 17 or (
-            value.total == 17
-            and value.is_soft
-            and self._rules.dealer_hits_soft_17
+            value.total == 17 and value.is_soft and self._rules.dealer_hits_soft_17
         )
 
     @property
@@ -498,12 +496,8 @@ class BlackjackRound:
                 surrendered=state.surrendered,
                 finished=state.finished,
                 is_active=index == self._active_hand_index,
-                outcome=(
-                    settlements[index].outcome if index in settlements else None
-                ),
-                profit=(
-                    settlements[index].profit if index in settlements else None
-                ),
+                outcome=(settlements[index].outcome if index in settlements else None),
+                profit=(settlements[index].profit if index in settlements else None),
             )
             for index, state in enumerate(self._player_hands)
         )
