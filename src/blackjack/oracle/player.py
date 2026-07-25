@@ -83,8 +83,44 @@ class OracleHand:
 
 @dataclass(frozen=True, slots=True)
 class ResolvedHand:
-    hand: OracleHand
+    total: int
+    wager: Fraction
+    is_natural_blackjack: bool
+    is_bust: bool
     surrendered: bool = False
+
+    @classmethod
+    def from_hand(
+        cls,
+        hand: OracleHand,
+        *,
+        surrendered: bool = False,
+    ) -> ResolvedHand:
+        return cls(
+            total=hand.value.total,
+            wager=hand.wager,
+            is_natural_blackjack=hand.is_natural_blackjack,
+            is_bust=hand.value.is_bust,
+            surrendered=surrendered,
+        )
+
+
+def _add_finished(
+    finished: tuple[ResolvedHand, ...],
+    resolved: ResolvedHand,
+) -> tuple[ResolvedHand, ...]:
+    return tuple(
+        sorted(
+            (*finished, resolved),
+            key=lambda hand: (
+                hand.surrendered,
+                hand.is_bust,
+                hand.is_natural_blackjack,
+                hand.total,
+                hand.wager,
+            ),
+        )
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -227,7 +263,7 @@ def _optimal_distribution(
             upcard,
             condition,
             pending,
-            (*finished, ResolvedHand(active)),
+            _add_finished(finished, ResolvedHand.from_hand(active)),
             rules,
             unseen_unavailable,
         )
@@ -242,7 +278,7 @@ def _optimal_distribution(
             upcard,
             condition,
             pending,
-            (*finished, ResolvedHand(active)),
+            _add_finished(finished, ResolvedHand.from_hand(active)),
             rules,
             unseen_unavailable,
         )
@@ -285,7 +321,7 @@ def _take_action(
             upcard,
             condition,
             pending,
-            (*finished, ResolvedHand(active)),
+            _add_finished(finished, ResolvedHand.from_hand(active)),
             rules,
             unseen_unavailable,
         )
@@ -295,7 +331,10 @@ def _take_action(
             upcard,
             condition,
             pending,
-            (*finished, ResolvedHand(active, surrendered=True)),
+            _add_finished(
+                finished,
+                ResolvedHand.from_hand(active, surrendered=True),
+            ),
             rules,
             unseen_unavailable,
         )
@@ -340,7 +379,10 @@ def _take_action(
                     upcard,
                     condition,
                     pending,
-                    (*finished, ResolvedHand(doubled.add(draw.value))),
+                    _add_finished(
+                        finished,
+                        ResolvedHand.from_hand(doubled.add(draw.value)),
+                    ),
                     rules,
                     unseen_unavailable,
                 ),
@@ -401,10 +443,12 @@ def _split_distribution(
                     upcard,
                     condition,
                     pending,
-                    (
-                        *finished,
-                        ResolvedHand(left),
-                        ResolvedHand(right),
+                    _add_finished(
+                        _add_finished(
+                            finished,
+                            ResolvedHand.from_hand(left),
+                        ),
+                        ResolvedHand.from_hand(right),
                     ),
                     rules,
                     unseen_unavailable,
@@ -463,9 +507,7 @@ def _settle_finished(
     rules: CasinoRules,
     unseen_unavailable: int,
 ) -> ReturnDistribution:
-    if all(
-        resolved.surrendered or resolved.hand.value.is_bust for resolved in finished
-    ):
+    if all(resolved.surrendered or resolved.is_bust for resolved in finished):
         return ReturnDistribution.constant(
             sum(
                 (_fixed_loss(resolved) for resolved in finished),
@@ -495,7 +537,7 @@ def _settle_finished(
 
 
 def _fixed_loss(resolved: ResolvedHand) -> Fraction:
-    return -resolved.hand.wager / 2 if resolved.surrendered else -resolved.hand.wager
+    return -resolved.wager / 2 if resolved.surrendered else -resolved.wager
 
 
 def _profit_against_dealer(
@@ -503,22 +545,21 @@ def _profit_against_dealer(
     dealer: DealerOutcome,
     rules: CasinoRules,
 ) -> Fraction:
-    hand = resolved.hand
     if resolved.surrendered:
-        return -hand.wager / 2
-    if hand.value.is_bust:
-        return -hand.wager
+        return -resolved.wager / 2
+    if resolved.is_bust:
+        return -resolved.wager
     if dealer is DealerOutcome.BLACKJACK:
-        return Fraction(0) if hand.is_natural_blackjack else -hand.wager
-    if hand.is_natural_blackjack:
-        return hand.wager * rules.blackjack_profit
+        return Fraction(0) if resolved.is_natural_blackjack else -resolved.wager
+    if resolved.is_natural_blackjack:
+        return resolved.wager * rules.blackjack_profit
     if dealer is DealerOutcome.BUST:
-        return hand.wager * rules.ordinary_win_profit
+        return resolved.wager * rules.ordinary_win_profit
     dealer_total = dealer.total
     if dealer_total is None:
         raise AssertionError("live dealer outcome must have a total")
-    if hand.value.total > dealer_total:
-        return hand.wager * rules.ordinary_win_profit
-    if hand.value.total == dealer_total:
+    if resolved.total > dealer_total:
+        return resolved.wager * rules.ordinary_win_profit
+    if resolved.total == dealer_total:
         return Fraction(0)
-    return -hand.wager
+    return -resolved.wager

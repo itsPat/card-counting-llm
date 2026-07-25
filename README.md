@@ -290,17 +290,20 @@ Open `notebooks/01_blackjack_engine.ipynb` in VS Code and select the same
 
 ### 3. Build the Blackjack Oracle
 
-- [ ] Calculate exact dealer outcome probabilities from a remaining shoe.
-- [ ] Calculate the expected value of every legal player action.
-- [ ] Average correctly over an unknown dealer hole card.
-- [ ] Condition probabilities on a negative dealer peek.
-- [ ] Calculate split-hand expected values.
-- [ ] Calculate the expected value of insurance.
-- [ ] Select the optimal composition-dependent action.
-- [ ] Calculate the complete probability distribution of round returns.
-- [ ] Calculate continuous full-Kelly and half-Kelly bankroll fractions.
-- [ ] Validate oracle results against independently published values and small
+- [x] Calculate exact dealer outcome probabilities from a remaining shoe.
+- [x] Calculate the expected value of every legal player action.
+- [x] Average correctly over an unknown dealer hole card.
+- [x] Condition probabilities on a negative dealer peek.
+- [x] Calculate split-hand expected values.
+- [x] Calculate the expected value of insurance.
+- [x] Select the optimal composition-dependent action.
+- [x] Calculate the complete probability distribution of round returns.
+- [x] Calculate continuous full-Kelly and half-Kelly bankroll fractions.
+- [x] Validate oracle results against independently published values and small
       brute-force cases.
+
+The six-deck validation fixtures use the independently published
+[Wizard of Odds H17 composition-dependent return table](https://wizardofodds.com/games/blackjack/appendix/9/6dh17r4/).
 
 ### 4. Run the Bet-Token Pilot Analysis
 

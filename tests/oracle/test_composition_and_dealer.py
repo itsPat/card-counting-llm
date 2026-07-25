@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from fractions import Fraction
 
 import pytest
@@ -123,6 +124,12 @@ def test_unseen_burn_card_is_marginalized_not_exposed() -> None:
         PeekCondition.NO_BLACKJACK,
         unseen_unavailable=1,
     )
+    without_burn_enumeration = hidden_hole_draws(
+        composition,
+        CardValue.TEN,
+        PeekCondition.NO_BLACKJACK,
+    )
+    assert draws == without_burn_enumeration
     assert (
         sum(
             (draw.probability for draw in draws),
@@ -136,4 +143,69 @@ def test_unseen_burn_card_is_marginalized_not_exposed() -> None:
         PeekCondition.NO_BLACKJACK,
         unseen_unavailable=1,
     )
+    assert distribution == dealer_distribution(
+        composition,
+        CardValue.TEN,
+        PeekCondition.NO_BLACKJACK,
+    )
     assert distribution.probability(DealerOutcome.BLACKJACK) == 0
+
+
+def test_dealer_distribution_matches_independent_toy_brute_force() -> None:
+    values = (
+        CardValue.ACE,
+        CardValue.TWO,
+        CardValue.FIVE,
+        CardValue.SIX,
+        CardValue.TEN,
+        CardValue.TEN,
+        CardValue.TEN,
+    )
+    observed: defaultdict[DealerOutcome, Fraction] = defaultdict(Fraction)
+
+    def hand_value(hand: tuple[CardValue, ...]) -> tuple[int, bool]:
+        hard = sum(value.hard_value for value in hand)
+        soft = CardValue.ACE in hand and hard + 10 <= 21
+        return (hard + 10 if soft else hard, soft)
+
+    def recurse(
+        hand: tuple[CardValue, ...],
+        remaining: tuple[CardValue, ...],
+        probability: Fraction,
+    ) -> None:
+        total, soft = hand_value(hand)
+        if total > 21:
+            observed[DealerOutcome.BUST] += probability
+            return
+        if total > 17 or (total == 17 and not soft):
+            outcome = {
+                17: DealerOutcome.SEVENTEEN,
+                18: DealerOutcome.EIGHTEEN,
+                19: DealerOutcome.NINETEEN,
+                20: DealerOutcome.TWENTY,
+                21: DealerOutcome.TWENTY_ONE,
+            }[total]
+            observed[outcome] += probability
+            return
+        for index, value in enumerate(remaining):
+            recurse(
+                (*hand, value),
+                (*remaining[:index], *remaining[index + 1 :]),
+                probability / len(remaining),
+            )
+
+    for hole_index, hole in enumerate(values):
+        remaining = (*values[:hole_index], *values[hole_index + 1 :])
+        recurse(
+            (CardValue.SIX, hole),
+            remaining,
+            Fraction(1, len(values)),
+        )
+
+    oracle = dealer_distribution(
+        Composition.from_values(values),
+        CardValue.SIX,
+    )
+    assert {item.outcome: item.probability for item in oracle.outcomes} == dict(
+        observed
+    )
