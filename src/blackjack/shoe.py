@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass
+from math import ceil, floor
 from random import Random
 
 from blackjack.cards import Card, Rank
@@ -65,10 +66,9 @@ class Shoe:
         rng = Random(seed)
         cards = [Card(rank) for rank in Rank for _ in range(4 * rules.decks)]
         rng.shuffle(cards)
-        low = float(rules.minimum_penetration)
-        high = float(rules.maximum_penetration)
-        penetration = rng.uniform(low, high)
-        cut = round(len(cards) * penetration)
+        minimum_cut = ceil(len(cards) * rules.minimum_penetration)
+        maximum_cut = floor(len(cards) * rules.maximum_penetration)
+        cut = rng.randint(minimum_cut, maximum_cut)
         return cls(ShoeReplay(cards=tuple(cards), cut_card_position=cut))
 
     @classmethod

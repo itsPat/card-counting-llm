@@ -34,7 +34,7 @@ def test_burn_card_is_unseen_and_not_dealt() -> None:
     assert shoe.dealt_count == 1
 
 
-@pytest.mark.parametrize("seed", [0, 1, 7, 99, 2**31])
+@pytest.mark.parametrize("seed", range(100))
 def test_penetration_stays_within_fixed_boundaries(seed: int) -> None:
     replay = Shoe.shuffled(seed).replay
     assert 312 * Fraction(7, 10) <= replay.cut_card_position
