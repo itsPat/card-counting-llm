@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": ".venv",
+  "jupyter.notebookFileRoot": "${workspaceFolder}",
+  "files.exclude": {
+    "**/.ipynb_checkpoints": true,
+    "**/__pycache__": true
+  }
+}

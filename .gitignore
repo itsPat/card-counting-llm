@@ -1,0 +1,8 @@
+.venv/
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+
+# Generated datasets and training outputs are reproducible.
+data/generated/
+artifacts/*
