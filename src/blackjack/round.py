@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 from fractions import Fraction
 
-from blackjack.actions import InsuranceAction, PlayerAction, RoundPhase
+from blackjack.actions import DecisionType, InsuranceAction, PlayerAction, RoundPhase
 from blackjack.cards import Card, Rank
 from blackjack.events import (
     EventType,
@@ -81,6 +82,19 @@ class PublicRoundState:
     visible_card_history: tuple[Card, ...]
     events: tuple[PublicEvent, ...]
     settlement: RoundSettlement | None
+    model_context: ModelContext | None
+
+
+@dataclass(frozen=True, slots=True)
+class ModelContext:
+    """The visible cards partitioned exactly once for one model decision."""
+
+    decision_type: DecisionType
+    history: tuple[Card, ...]
+    current_hand: tuple[Card, ...]
+    dealer_upcard: Card
+    legal_player_actions: tuple[PlayerAction, ...]
+    legal_insurance_actions: tuple[InsuranceAction, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -157,6 +171,7 @@ class BlackjackRound:
             visible_card_history=tuple(self._visible_cards),
             events=public_events(tuple(self._events)),
             settlement=self._settlement,
+            model_context=self._model_context(),
         )
 
     @property
@@ -500,6 +515,43 @@ class BlackjackRound:
                 profit=(settlements[index].profit if index in settlements else None),
             )
             for index, state in enumerate(self._player_hands)
+        )
+
+    def _model_context(self) -> ModelContext | None:
+        if self._phase is RoundPhase.INSURANCE:
+            current_hand = tuple(self._player_hands[0].cards)
+            decision_type = DecisionType.INSURANCE
+            legal_player_actions: tuple[PlayerAction, ...] = ()
+            legal_insurance_actions = (
+                InsuranceAction.TAKE,
+                InsuranceAction.DECLINE,
+            )
+        elif (
+            self._phase is RoundPhase.PLAYER_ACTIONS
+            and self._active_hand_index is not None
+        ):
+            current_hand = tuple(self._player_hands[self._active_hand_index].cards)
+            decision_type = DecisionType.PLAY
+            legal_player_actions = self.legal_actions
+            legal_insurance_actions = ()
+        else:
+            return None
+
+        dealer_upcard = self._dealer_cards[0]
+        excluded = Counter((*current_hand, dealer_upcard))
+        history: list[Card] = []
+        for card in self._visible_cards:
+            if excluded[card] > 0:
+                excluded[card] -= 1
+            else:
+                history.append(card)
+        return ModelContext(
+            decision_type=decision_type,
+            history=tuple(history),
+            current_hand=current_hand,
+            dealer_upcard=dealer_upcard,
+            legal_player_actions=legal_player_actions,
+            legal_insurance_actions=legal_insurance_actions,
         )
 
     def _record(

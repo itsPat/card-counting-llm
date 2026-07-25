@@ -21,3 +21,8 @@ class RoundPhase(StrEnum):
     PLAYER_ACTIONS = "player_actions"
     DEALER_PLAY = "dealer_play"
     SETTLED = "settled"
+
+
+class DecisionType(StrEnum):
+    PLAY = "play"
+    INSURANCE = "insurance"

@@ -6,6 +6,7 @@ import pytest
 
 from blackjack import (
     BlackjackRound,
+    DecisionType,
     EventType,
     IllegalActionError,
     InsuranceAction,
@@ -39,6 +40,24 @@ def test_initial_deal_order_and_hole_card_redaction() -> None:
         event.event_type is not EventType.DEALER_HOLE_CARD_DEALT
         for event in public.events
     )
+    context = public.model_context
+    assert context is not None
+    assert context.decision_type is DecisionType.PLAY
+    assert context.history == ()
+    assert context.current_hand == cards("5", "6")
+    assert context.dealer_upcard == cards("9")[0]
+
+
+def test_model_context_partitions_every_visible_card_exactly_once() -> None:
+    game = arranged_round("8", "6", "8", "10", "2", "3")
+    game.act(PlayerAction.SPLIT)
+    context = game.public_state.model_context
+    assert context is not None
+    partitioned = (*context.history, *context.current_hand, context.dealer_upcard)
+    assert sorted(card.rank.value for card in partitioned) == sorted(
+        card.rank.value for card in game.public_state.visible_card_history
+    )
+    assert context.history == cards("8", "3")
 
 
 def test_ten_upcard_peek_reveals_natural_and_settles() -> None:

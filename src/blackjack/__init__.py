@@ -1,6 +1,6 @@
 """A strictly typed blackjack engine for card-counting experiments."""
 
-from blackjack.actions import InsuranceAction, PlayerAction, RoundPhase
+from blackjack.actions import DecisionType, InsuranceAction, PlayerAction, RoundPhase
 from blackjack.cards import Card, Rank, cards
 from blackjack.events import (
     EventType,
@@ -16,6 +16,7 @@ from blackjack.round import (
     IllegalActionError,
     InternalRoundState,
     InvalidPhaseError,
+    ModelContext,
     PublicRoundState,
 )
 from blackjack.rules import FIXED_RULES, CasinoRules
@@ -40,6 +41,7 @@ __all__ = [
     "BlackjackStateError",
     "Card",
     "CasinoRules",
+    "DecisionType",
     "EventType",
     "EventVisibility",
     "Hand",
@@ -55,6 +57,7 @@ __all__ = [
     "InternalRoundState",
     "InvalidPhaseError",
     "InvalidReplayError",
+    "ModelContext",
     "PlayerAction",
     "PublicEvent",
     "PublicRoundState",
