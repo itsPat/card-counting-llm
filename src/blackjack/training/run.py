@@ -30,6 +30,7 @@ from blackjack.training.metrics import (
 )
 from blackjack.training.model import (
     BlackjackTransformer,
+    PositionScheme,
     TransformerConfiguration,
 )
 
@@ -42,7 +43,7 @@ class TrainingDevice(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class TrainingConfiguration:
-    epoch_count: int = 8
+    epoch_count: int = 15
     batch_size: int = 64
     learning_rate: float = 3e-4
     weight_decay: float = 0.01
@@ -311,7 +312,7 @@ def _argument_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("dataset_directory", type=Path)
     parser.add_argument("output_directory", type=Path)
-    parser.add_argument("--epochs", type=int, default=8)
+    parser.add_argument("--epochs", type=int, default=15)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--learning-rate", type=float, default=3e-4)
     parser.add_argument(
@@ -331,6 +332,12 @@ def _argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--layers", type=int, default=4)
     parser.add_argument("--feed-forward-dimension", type=int, default=512)
     parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument(
+        "--positions",
+        type=PositionScheme,
+        choices=tuple(PositionScheme),
+        default=PositionScheme.QUERY_RELATIVE,
+    )
     parser.add_argument("--seed", type=int, default=20250801)
     parser.add_argument(
         "--training-shoe-prefix",
@@ -370,6 +377,7 @@ def main() -> None:
         layer_count=arguments.layers,
         feed_forward_dimension=arguments.feed_forward_dimension,
         dropout=arguments.dropout,
+        position_scheme=arguments.positions,
     )
     training_configuration = TrainingConfiguration(
         epoch_count=arguments.epochs,

@@ -19,6 +19,7 @@ from blackjack.training.model import (
     BlackjackTransformer,
     CausalSelfAttention,
     FeedForward,
+    PositionScheme,
     TransformerBlock,
     TransformerConfiguration,
 )
@@ -40,6 +41,7 @@ __all__ = [
     "DecisionLoader",
     "EncodedDecision",
     "FeedForward",
+    "PositionScheme",
     "SamplingConfiguration",
     "SamplingStrategy",
     "TransformerBlock",

@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 from math import sqrt
 
 import torch
 from torch import Tensor, nn
 from torch.nn import functional as functional
+
+
+class PositionScheme(StrEnum):
+    ABSOLUTE = "absolute"
+    QUERY_RELATIVE = "query-relative"
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,6 +25,7 @@ class TransformerConfiguration:
     layer_count: int = 4
     feed_forward_dimension: int = 512
     dropout: float = 0.1
+    position_scheme: PositionScheme = PositionScheme.QUERY_RELATIVE
 
     def __post_init__(self) -> None:
         positive_values = (
@@ -210,10 +217,7 @@ class BlackjackTransformer(nn.Module):
         if sequence_length > self.configuration.context_length:
             raise ValueError("input exceeds the transformer context length")
 
-        positions = torch.arange(
-            sequence_length,
-            device=input_ids.device,
-        )
+        positions = self.position_ids(attention_mask)
         hidden_states = self.token_embedding(input_ids)
         hidden_states = hidden_states + self.position_embedding(positions)
         hidden_states = self.embedding_dropout(hidden_states)
@@ -224,3 +228,26 @@ class BlackjackTransformer(nn.Module):
     @property
     def parameter_count(self) -> int:
         return sum(parameter.numel() for parameter in self.parameters())
+
+    def position_ids(self, attention_mask: Tensor) -> Tensor:
+        """Return absolute or decision-query-relative learned positions."""
+
+        if attention_mask.ndim != 2:
+            raise ValueError("attention mask must have shape [batch, time]")
+        sequence_length = attention_mask.shape[1]
+        base = torch.arange(
+            sequence_length,
+            device=attention_mask.device,
+        )
+        if (
+            self.configuration.position_scheme
+            is PositionScheme.ABSOLUTE
+        ):
+            return base
+        lengths = attention_mask.sum(dim=1, dtype=torch.long)
+        positions = (
+            self.configuration.context_length
+            - lengths[:, None]
+            + base[None, :]
+        )
+        return positions.masked_fill(~attention_mask, 0)

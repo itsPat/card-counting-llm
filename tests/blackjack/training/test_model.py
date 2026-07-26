@@ -6,6 +6,7 @@ import torch
 from blackjack.training import BLACKJACK_VOCABULARY
 from blackjack.training.model import (
     BlackjackTransformer,
+    PositionScheme,
     TransformerConfiguration,
 )
 
@@ -62,6 +63,31 @@ def test_real_tokens_are_unchanged_by_right_padding() -> None:
     short_logits = model(short, short != 0)
     padded_logits = model(padded, padded != 0)
     assert torch.allclose(short_logits, padded_logits[:, :3])
+
+
+def test_query_relative_positions_anchor_each_real_sequence_end() -> None:
+    configuration = TransformerConfiguration(
+        vocabulary_size=len(BLACKJACK_VOCABULARY),
+        context_length=8,
+        embedding_dimension=16,
+        head_count=4,
+        layer_count=1,
+        feed_forward_dimension=32,
+        dropout=0,
+        position_scheme=PositionScheme.QUERY_RELATIVE,
+    )
+    model = BlackjackTransformer(
+        configuration,
+        padding_index=BLACKJACK_VOCABULARY.pad_id,
+    )
+    mask = torch.tensor(
+        ((True, True, True), (True, True, False)),
+        dtype=torch.bool,
+    )
+    assert torch.equal(
+        model.position_ids(mask),
+        torch.tensor(((5, 6, 7), (6, 7, 0)), dtype=torch.long),
+    )
 
 
 def test_transformer_rejects_invalid_shapes_and_configuration() -> None:
