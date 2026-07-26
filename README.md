@@ -807,12 +807,20 @@ change a real-token logit.
 The default baseline has four layers, four 32-dimensional heads, a
 128-dimensional embedding, a 512-dimensional feed-forward layer, and 831,488
 parameters. This is intentionally small enough for repeated Apple Metal
-experiments. The trainer seeds initialization, dropout, and epoch sampling;
-clips gradients; retains the best validation-loss checkpoint; and records
-overall, per-kind, and per-target accuracy. Evaluation joins predictions back
-to the metadata only by shoe and decision index, allowing expected-profit
-regret for play and insurance and expected-log-growth regret for bets without
-putting oracle values into model inputs.
+experiments. Each real token receives a learned position relative to its
+decision query, with the query anchored at position 255. This retains the
+order and recency of every visible card while placing the current hand and
+dealer upcard at stable offsets. An absolute-position ablation demonstrated
+why this inductive bias matters: with only 80 training shoes, the same
+current-hand pattern otherwise has to be relearned at many history-dependent
+positions.
+
+The trainer seeds initialization, dropout, and epoch sampling; clips
+gradients; retains the best validation-loss checkpoint; and records overall,
+per-kind, and per-target accuracy. Evaluation joins predictions back to the
+metadata only by shoe and decision index, allowing expected-profit regret for
+play and insurance and expected-log-growth regret for bets without putting
+oracle values into model inputs.
 
 I am proving this implementation and the training settings before turning it
 into the educational notebook sequence. The notebooks will contain the
@@ -821,47 +829,69 @@ explanations; I can then comment out cells and rebuild each component myself.
 
 #### 100-Shoe Baseline Results
 
-I trained matched eight-epoch baselines with natural and capped
+I trained matched 15-epoch query-relative models with natural and capped
 inverse-square-root sampling. Both used the same 831,488-parameter model,
 initialization seed, optimizer, batch size, and untouched 1,010-decision
 validation split. I selected checkpoints by minimum validation loss and did
-not inspect the test split.
+not inspect the test split. I retain the absolute-position result below as the
+ablation that motivated the position change.
 
 | Model/sampler | Best epoch | Validation accuracy | Play accuracy | Mean play regret | Mean bet log-growth regret |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Legal-set frequency | — | 62.0% | 47.7% | 0.1545 wager units | 0.0000236 |
-| Natural | 4 | 64.3% | 48.4% | 0.1580 wager units | 0.0000164 |
-| Balanced | 2 | 59.2% | 39.8% | 0.2486 wager units | 0.0000130 |
+| H17 basic strategy | — | 86.9% | 94.8% | 0.00110 wager units | 0.0000236 |
+| Absolute/natural | 4 | 64.3% | 48.4% | 0.1580 wager units | 0.0000164 |
+| Query-relative/natural | 12 | 86.6% | 90.1% | 0.0141 wager units | 0.0000121 |
+| Query-relative/balanced | 11 | 85.9% | 87.5% | 0.0295 wager units | 0.0000102 |
 
 The frequency control never reads the token sequence. It fits natural target
 counts on the training split and chooses the most frequent currently legal
 token, which reduces here to minimum bet, stand, and decline insurance when
-those actions are available. The natural transformer improves exact accuracy
-by only 2.3 percentage points. It improves bet log-growth regret, but its play
-mistakes are slightly more expensive than the frequency control's mistakes.
-The 100-shoe result therefore verifies the experiment and training loop; it is
-not yet evidence that the transformer learned useful composition-dependent
-play.
+those actions are available. The basic-strategy control reads only the current
+hand, dealer upcard, and legal actions; it ignores visible-card history and
+uses minimum bet and declined insurance. Its 94.8% agreement with empirical
+play labels shows that composition-dependent deviations are a small minority
+of natural play states.
 
 ```bash
 uv run python -m blackjack.training.baseline data/generated/v4
+uv run python -m blackjack.training.baseline \
+  data/generated/v4 \
+  --policy basic-strategy
 ```
 
-Aggregate accuracy conceals the main result. The natural checkpoint scored
-zero on validation `<BET_MEDIUM>`, `<BET_HIGH>`, `<DOUBLE>`, and
-`<SURRENDER>` examples. The balanced checkpoint recovered 5 of 34 medium bets,
-1 of 8 high bets, and 5 of 6 splits, but still recovered no doubles or
-surrenders and traded too many stands for hits. By epoch 7, the balanced model
-reached 62.5% overall accuracy and began recovering every rare play target,
-including 10 of 56 doubles and 4 of 14 surrenders, but its mean play regret
-remained worse than the natural checkpoint at 0.2201.
+The absolute model kept improving its training accuracy through 30 epochs but
+failed to generalize basic strategy. Query-relative positions changed that
+result immediately: natural play accuracy reached 90.1%, and mean play regret
+fell by more than 11 times. The model now learns the conventional core
+strategy, but it does not yet beat that control on play.
 
-This is useful negative evidence rather than a failed pipeline. Resampling can
-change which errors the model makes, but 40 high-bet, 103 split, and 147
-surrender training rows do not contain enough distinct states for robust
-generalization. The 1,000-shoe learning-curve corpus is therefore the next
-data requirement; I will not tune balancing more aggressively on this small
-validation set.
+Balancing exposes a real tradeoff. Relative to natural sampling, it recovered
+more medium bets (16 of 34 versus 3), doubles (48 of 56 versus 42), surrenders
+(11 of 14 versus 8), and insurance takes (3 of 9 versus 1). It reduced bet
+log-growth regret, but lost 0.7 percentage points overall and more than doubled
+mean play regret. Neither result is reliable for the eight high-bet validation
+rows. I will carry both samplers into the nested learning curves rather than
+tuning the cap against this small split.
+
+The composition-dependent slice makes that tradeoff especially relevant. Basic
+strategy agrees with the oracle on 507 of 535 validation play decisions. On
+those common states, the natural and balanced models score 93.3% and 89.0%.
+On the 28 states where the oracle departs from basic strategy, natural sampling
+gets 9 correct (32.1%) while balancing gets 17 correct (60.7%). Twenty-eight
+examples are too few for a conclusion, but this conditional metric is much
+closer to the experiment's purpose than aggregate accuracy.
+
+```bash
+uv run python -m blackjack.training.compare \
+  data/generated/v4 \
+  artifacts/training/v4-query-relative-15
+```
+
+These results verify a credible learning system without yet establishing
+composition-dependent play. The 1,000-shoe corpus is needed both for rare
+targets and for the roughly 5% of play states where the empirical oracle
+departs from basic strategy.
 
 The v4 integration run is not the formal 100-shoe point on the later learning
 curve because split assignment depends on the total corpus size. After v5 is
@@ -1054,7 +1084,8 @@ The six-deck validation fixtures use the independently published
 - [x] Train only on decision-token targets.
 - [x] Establish seeded training and atomic best-model checkpointing, with exact
       CPU replay and the measured Metal numerical tolerance documented.
-- [ ] Tune a model that trains comfortably with Apple Silicon acceleration.
+- [x] Select and validate a query-relative model that trains comfortably with
+      Apple Silicon acceleration.
 - [x] Record losses and decision-specific metrics.
 
 ### 8. Evaluate the Model
