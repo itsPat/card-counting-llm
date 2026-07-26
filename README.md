@@ -862,13 +862,13 @@ validation split. I selected checkpoints by minimum validation loss and did
 not inspect the test split. I retain the absolute-position result below as the
 ablation that motivated the position change.
 
-| Model/sampler | Best epoch | Validation accuracy | Play accuracy | Mean play regret | Mean bet log-growth regret |
+| Model/sampler | Best epoch | Validation accuracy | Play accuracy | Mean play regret | Mean half-Kelly fraction error |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Legal-set frequency | — | 62.0% | 47.7% | 0.1545 wager units | 0.0000236 |
-| H17 basic strategy | — | 86.9% | 94.8% | 0.00110 wager units | 0.0000236 |
-| Absolute/natural | 4 | 64.3% | 48.4% | 0.1580 wager units | 0.0000164 |
-| Query-relative/natural | 12 | 86.6% | 90.1% | 0.0141 wager units | 0.0000121 |
-| Query-relative/balanced | 11 | 85.9% | 87.5% | 0.0295 wager units | 0.0000102 |
+| Legal-set frequency | — | 62.0% | 47.7% | 0.1545 wager units | 0.2012 pp |
+| H17 basic strategy | — | 86.9% | 94.8% | 0.00110 wager units | 0.2012 pp |
+| Absolute/natural | 4 | 64.3% | 48.4% | 0.1580 wager units | 0.1641 pp |
+| Query-relative/natural | 12 | 86.6% | 90.1% | 0.0141 wager units | 0.1516 pp |
+| Query-relative/balanced | 11 | 85.9% | 87.5% | 0.0295 wager units | 0.1433 pp |
 
 The frequency control never reads the token sequence. It fits natural target
 counts on the training split and chooses the most frequent currently legal
@@ -878,6 +878,18 @@ hand, dealer upcard, and legal actions; it ignores visible-card history and
 uses minimum bet and declined insurance. Its 94.8% agreement with empirical
 play labels shows that composition-dependent deviations are a small minority
 of natural play states.
+
+The half-Kelly errors above are percentage points of bankroll and include both
+the finite token vocabulary's rounding error and the model's prediction error.
+During the scaled-run audit I found that the earlier evaluator had instead
+compared predictions with the discrete token that maximized expected log
+growth. That is a full-Kelly-oriented comparator and did not match the
+half-Kelly policy used to create the target. The categorical targets, training
+loss, checkpoints, play metrics, and insurance metrics were unaffected. I
+replaced that provisional metric and rescored every model reported here from
+its retained checkpoint. Evaluation now reports absolute fraction error and
+absolute expected-log-growth change relative to the continuous half-Kelly
+policy; it does not relabel a larger, riskier bet as an improvement.
 
 ```bash
 uv run python -m blackjack.training.baseline data/generated/v4
@@ -894,11 +906,11 @@ strategy, but it does not yet beat that control on play.
 
 Balancing exposes a real tradeoff. Relative to natural sampling, it recovered
 more medium bets (16 of 34 versus 3), doubles (48 of 56 versus 42), surrenders
-(11 of 14 versus 8), and insurance takes (3 of 9 versus 1). It reduced bet
-log-growth regret, but lost 0.7 percentage points overall and more than doubled
-mean play regret. Neither result is reliable for the eight high-bet validation
-rows. I will carry both samplers into the nested learning curves rather than
-tuning the cap against this small split.
+(11 of 14 versus 8), and insurance takes (3 of 9 versus 1). It reduced mean
+absolute half-Kelly fraction error, but lost 0.7 percentage points overall and
+more than doubled mean play regret. Neither result is reliable for the eight
+high-bet validation rows. I will carry both samplers into the nested learning
+curves rather than tuning the cap against this small split.
 
 The composition-dependent slice makes that tradeoff especially relevant. Basic
 strategy agrees with the oracle on 507 of 535 validation play decisions. On
@@ -928,7 +940,34 @@ the training-assigned shoes within each range, so they are strictly nested
 without allowing a validation shoe to become training data. The training
 artifacts record the resulting shoe and decision counts.
 
-For example, the first formal point will use:
+#### Natural-Sampling Learning Curve
+
+The formal natural-sampling curve uses 78, 246, and 800 training-assigned
+shoes from those three prefixes. Every point uses the same 10,235-decision
+validation split, the same initialization and optimizer configuration, and a
+checkpoint selected by minimum validation cross-entropy. The test split
+remains unopened.
+
+| Training prefix | Training decisions | Best epoch | Overall accuracy | Play accuracy | Basic-strategy agreement | Composition deviations | Mean play regret | Mean half-Kelly fraction error |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 100 | 8,006 | 11 | 90.3% | 89.6% | 91.8% | 46.1% | 0.01365 wagers | 0.1209 pp |
+| 300 | 25,173 | 13 | 94.4% | 93.8% | 95.8% | 55.4% | 0.00922 wagers | 0.1041 pp |
+| 1,000 | 81,973 | 10 | 95.8% | 95.7% | 98.0% | 50.6% | 0.00430 wagers | 0.1016 pp |
+
+The larger corpus clearly improves overall accuracy, ordinary play, mean play
+regret, and bet sizing. At 1,000 shoes the model slightly exceeds the
+history-blind basic-strategy control's 95.1% play accuracy, but its 0.00430
+mean play regret is still worse than the control's 0.00152 because a small
+number of model mistakes are expensive.
+
+Composition-dependent accuracy is not monotonic at the selected checkpoints.
+The 1,000-shoe model reaches 55.8% on that slice at epoch 13, but the
+predeclared minimum-loss selector chooses epoch 10 at 50.6%. I retain and
+report both facts rather than choosing the checkpoint post hoc. The balanced
+curve will test whether emphasizing rare decisions can preserve more of that
+signal without giving back too much conventional play.
+
+The first formal point can be reproduced with:
 
 ```bash
 uv run python -m blackjack.training.run \
@@ -1116,15 +1155,27 @@ The six-deck validation fixtures use the independently published
 - [x] Select and validate a query-relative model that trains comfortably with
       Apple Silicon acceleration.
 - [x] Record losses and decision-specific metrics.
+- [ ] If the supervised learning curve remains label-limited, pretrain the
+      custom transformer on cheap unlabeled visible blackjack sequences and
+      measure how much oracle-labeled data fine-tuning then requires.
+- [ ] After preserving the supervised-from-scratch baseline, evaluate
+      value-aware post-training that uses normalized oracle action values and
+      Monte Carlo uncertainty to distinguish costly errors from noisy
+      near-ties.
+- [ ] Compare every additional training stage against the same untouched
+      validation and test protocol rather than replacing the baseline.
 
 ### 8. Evaluate the Model
 
 - [x] Measure exact decision accuracy by decision type.
 - [x] Measure expected-value regret for playing mistakes.
-- [ ] Measure bet-fraction error and expected log-growth regret.
+- [x] Replace the provisional full-Kelly-oriented bet regret metric with
+      half-Kelly-aligned bet-fraction error and absolute log-growth change;
+      recompute every reported bet metric from retained checkpoints.
 - [ ] Evaluate complete bankroll trajectories on held-out shoes.
-- [ ] Compare against no-history, basic-strategy, and conventional counting
-      baselines.
+- [ ] Compare against no-history and basic-strategy controls plus a
+      predeclared six-deck H17 Hi-Lo system with public running/true count, a
+      tokenized bet ramp, insurance threshold, and documented play indices.
 - [ ] Break results down by shoe penetration and remaining composition.
 - [ ] Verify that evaluation shoes and states were not seen during training.
 
@@ -1136,3 +1187,29 @@ The six-deck validation fixtures use the independently published
 - [ ] Make controlled card substitutions and observe decision changes.
 - [ ] Compare models with different context lengths and capacities.
 - [ ] Identify failure cases and design follow-up experiments.
+
+## What I Want to Try Next
+
+I want to finish this from-scratch experiment before replacing its clean,
+controlled learning problem with pretrained knowledge. Then I want to repeat
+the complete process on a second domain whose labels are cheap enough to
+generate locally. A good candidate will have a small vocabulary, short
+sequences, millions of reproducible synthetic examples, labels that can be
+computed exactly or in milliseconds, a strong non-neural baseline, and a
+metric tied directly to the real objective. Small board-game tablebases,
+synthetic arithmetic or program execution, compact navigation policies, and
+solver-backed scheduling problems are possible directions.
+
+After I can design that second experiment alone, I want to fine-tune a small
+existing model with parameter-efficient adapters on a language-oriented task.
+That project should teach me the complementary problems that this one
+deliberately avoids: working with an inherited tokenizer and pretrained
+knowledge, formatting instruction data, measuring behavior drift and
+catastrophic forgetting, and serving a model much larger than its trainable
+adapter.
+
+Between those projects, I can use this transformer as a bridge. I can pretrain
+it from scratch on millions of cheap, unlabeled visible blackjack histories,
+then fine-tune it on the expensive oracle decisions. That experiment would
+measure label efficiency while preserving the custom vocabulary and a clear
+account of exactly what prior experience the model received.

@@ -139,7 +139,10 @@ def _model_configuration(artifact_directory: Path) -> TransformerConfiguration:
         report.get("model_configuration"),
         "model_configuration",
     )
-    position = configuration.get("position_scheme")
+    position = configuration.get(
+        "position_scheme",
+        PositionScheme.ABSOLUTE.value,
+    )
     if not isinstance(position, str):
         raise ValueError("position_scheme must be a string")
     return TransformerConfiguration(

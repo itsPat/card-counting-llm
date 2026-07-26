@@ -35,6 +35,7 @@ class DecisionMetrics:
     by_kind: tuple[CategoryAccuracy, ...]
     by_target: tuple[CategoryAccuracy, ...]
     regret_by_kind: tuple[ObjectiveRegret, ...] = ()
+    bet_policy: BetPolicyMetrics | None = None
     basic_strategy_comparison: StrategyComparison | None = None
 
     @property
@@ -50,6 +51,17 @@ class ObjectiveRegret:
     mean_regret: float
     percentile_95_regret: float
     maximum_regret: float
+
+
+@dataclass(frozen=True, slots=True)
+class BetPolicyMetrics:
+    total: int
+    mean_absolute_fraction_error: float
+    percentile_95_absolute_fraction_error: float
+    maximum_absolute_fraction_error: float
+    mean_absolute_log_growth_change: float
+    percentile_95_absolute_log_growth_change: float
+    maximum_absolute_log_growth_change: float
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,6 +110,8 @@ class DecisionMetricAccumulator:
             tuple[DecisionKind, DecisionObjective],
             list[float],
         ] = {}
+        self._bet_fraction_errors: list[float] = []
+        self._bet_log_growth_changes: list[float] = []
         self._control_agreement = _MutableAccuracy()
         self._control_deviation = _MutableAccuracy()
 
@@ -150,10 +164,22 @@ class DecisionMetricAccumulator:
                     raise ValueError(
                         "evaluation reference decision kind differs"
                     )
-                key = (kind, reference.objective)
-                self._regrets.setdefault(key, []).append(
-                    reference.regret(int(predictions[row].item()))
-                )
+                prediction = int(predictions[row].item())
+                if kind is DecisionKind.BET:
+                    if reference.bet_policy is None:
+                        raise ValueError(
+                            "bet reference lacks half-Kelly policy data"
+                        )
+                    fraction_error, growth_change = (
+                        reference.bet_policy.errors(prediction)
+                    )
+                    self._bet_fraction_errors.append(fraction_error)
+                    self._bet_log_growth_changes.append(growth_change)
+                else:
+                    key = (kind, DecisionObjective.EXPECTED_PROFIT)
+                    self._regrets.setdefault(key, []).append(
+                        reference.regret(prediction)
+                    )
 
     def finish(self) -> DecisionMetrics:
         if self._overall.total == 0:
@@ -182,6 +208,10 @@ class DecisionMetricAccumulator:
             regret_by_kind=tuple(
                 _objective_regret(kind, objective, regrets)
                 for (kind, objective), regrets in self._regrets.items()
+            ),
+            bet_policy=_bet_policy_metrics(
+                self._bet_fraction_errors,
+                self._bet_log_growth_changes,
             ),
             basic_strategy_comparison=self._strategy_comparison(),
         )
@@ -214,6 +244,36 @@ def _objective_regret(
         mean_regret=sum(ordered) / len(ordered),
         percentile_95_regret=ordered[percentile_index],
         maximum_regret=ordered[-1],
+    )
+
+
+def _bet_policy_metrics(
+    fraction_errors: list[float],
+    log_growth_changes: list[float],
+) -> BetPolicyMetrics | None:
+    if not fraction_errors and not log_growth_changes:
+        return None
+    if len(fraction_errors) != len(log_growth_changes):
+        raise ValueError("bet policy metric lengths differ")
+    ordered_fractions = sorted(fraction_errors)
+    ordered_growth = sorted(log_growth_changes)
+    percentile_index = ceil(0.95 * len(ordered_fractions)) - 1
+    return BetPolicyMetrics(
+        total=len(ordered_fractions),
+        mean_absolute_fraction_error=(
+            sum(ordered_fractions) / len(ordered_fractions)
+        ),
+        percentile_95_absolute_fraction_error=(
+            ordered_fractions[percentile_index]
+        ),
+        maximum_absolute_fraction_error=ordered_fractions[-1],
+        mean_absolute_log_growth_change=(
+            sum(ordered_growth) / len(ordered_growth)
+        ),
+        percentile_95_absolute_log_growth_change=(
+            ordered_growth[percentile_index]
+        ),
+        maximum_absolute_log_growth_change=ordered_growth[-1],
     )
 
 
@@ -255,6 +315,29 @@ def decision_metrics_data(metrics: DecisionMetrics) -> dict[str, object]:
             _regret_data(metric) for metric in metrics.regret_by_kind
         ],
     }
+    if metrics.bet_policy is not None:
+        bet_policy = metrics.bet_policy
+        result["bet_policy"] = {
+            "total": bet_policy.total,
+            "mean_absolute_fraction_error": (
+                bet_policy.mean_absolute_fraction_error
+            ),
+            "percentile_95_absolute_fraction_error": (
+                bet_policy.percentile_95_absolute_fraction_error
+            ),
+            "maximum_absolute_fraction_error": (
+                bet_policy.maximum_absolute_fraction_error
+            ),
+            "mean_absolute_log_growth_change": (
+                bet_policy.mean_absolute_log_growth_change
+            ),
+            "percentile_95_absolute_log_growth_change": (
+                bet_policy.percentile_95_absolute_log_growth_change
+            ),
+            "maximum_absolute_log_growth_change": (
+                bet_policy.maximum_absolute_log_growth_change
+            ),
+        }
     comparison = metrics.basic_strategy_comparison
     if comparison is not None:
         result["basic_strategy_comparison"] = {
