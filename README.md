@@ -963,9 +963,41 @@ number of model mistakes are expensive.
 Composition-dependent accuracy is not monotonic at the selected checkpoints.
 The 1,000-shoe model reaches 55.8% on that slice at epoch 13, but the
 predeclared minimum-loss selector chooses epoch 10 at 50.6%. I retain and
-report both facts rather than choosing the checkpoint post hoc. The balanced
-curve will test whether emphasizing rare decisions can preserve more of that
-signal without giving back too much conventional play.
+report both facts rather than choosing the checkpoint post hoc.
+
+#### Balanced-Sampling Learning Curve
+
+The balanced runs use the same nested training rows, fixed validation set,
+model initialization, optimizer, and minimum-loss selector. Only the
+training-row sampler changes to capped inverse-square-root target weighting
+with replacement.
+
+| Training prefix | Best epoch | Overall accuracy | Play accuracy | Basic-strategy agreement | Composition deviations | Mean play regret | Mean half-Kelly fraction error |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 100 | 13 | 86.8% | 83.2% | 85.2% | 42.7% | 0.03107 wagers | 0.1209 pp |
+| 300 | 15 | 92.8% | 92.1% | 94.7% | 40.8% | 0.01241 wagers | 0.1088 pp |
+| 1,000 | 15 | 95.8% | 95.3% | 97.3% | 56.6% | 0.00318 wagers | 0.1011 pp |
+
+Balancing is harmful when the rare classes contain too little distinct data:
+at 100 and 300 shoes it repeatedly exposes a narrow set of rows and gives back
+too much common-strategy accuracy. At 1,000 shoes the tradeoff changes. Natural
+and balanced sampling are essentially tied overall—9,802 versus 9,804 correct
+validation decisions—but balancing gets 151 of 267 composition-dependent
+play decisions correct instead of 135 and lowers mean play regret by 26%.
+
+The improvement is not universal. Relative to natural sampling at 1,000
+shoes, balancing recovers more low and medium bets, splits, surrenders, and
+insurance takes, but fewer high bets and hits. It also has slightly worse
+validation cross-entropy (0.1078 versus 0.1032) and 20 fewer correct play
+decisions overall. I therefore treat the balanced 1,000-shoe model as the
+better composition-sensitive candidate, not as an unqualified winner.
+
+Both curves still improve materially between 300 and 1,000 shoes. This
+supports eventually scaling beyond 1,000, but the cheap permutation-
+augmentation and Hi-Lo control experiments should come first: they can reveal
+whether the next constraint is invariance, model behavior, or genuinely
+independent oracle-labeled compositions before I spend several more hours
+generating data.
 
 The first formal point can be reproduced with:
 
@@ -978,13 +1010,15 @@ uv run python -m blackjack.training.run \
   --device mps
 ```
 
-On Apple Metal, steady-state epochs took approximately eight seconds. Repeating
-the seeded natural run reproduced every rounded metric, while corresponding
-weights differed by at most `4.77e-7`. CPU tests are bit-exact; Metal training
-is seeded and numerically reproducible but is not described as bit-for-bit
-deterministic. Each run atomically stores the best validation-loss weights,
-every epoch's weights, the complete configuration, the vocabulary, and every
-epoch's aggregate, per-kind, per-target, objective-regret, and basic-strategy
+On Apple Metal, steady-state epochs took approximately eight seconds for the
+small v4 integration split, 75–92 seconds for the formal 100/300-shoe points,
+and 123–143 seconds for the 1,000-shoe points. Repeating the seeded v4 natural
+run reproduced every rounded metric, while corresponding weights differed by
+at most `4.77e-7`. CPU tests are bit-exact; Metal training is seeded and
+numerically reproducible but is not described as bit-for-bit deterministic.
+Each run atomically stores the best validation-loss weights, every epoch's
+weights, the complete configuration, the vocabulary, and every epoch's
+aggregate, per-kind, per-target, objective-regret, and basic-strategy
 agreement/deviation metrics. Retaining each epoch avoids assuming that minimum
 cross-entropy, minimum bankroll regret, and maximum composition-deviation
 accuracy select the same checkpoint.
@@ -1147,7 +1181,7 @@ The six-deck validation fixtures use the independently published
       dataset.
 - [x] Compare natural sampling with capped inverse-square-root target
       balancing while leaving validation and test untouched.
-- [ ] Plot nested 100-, 300-, and 1,000-shoe learning curves for accuracy and
+- [x] Plot nested 100-, 300-, and 1,000-shoe learning curves for accuracy and
       expected-value regret before choosing the final corpus size.
 - [x] Train only on decision-token targets.
 - [x] Establish seeded training and atomic best-model checkpointing, with exact
@@ -1155,6 +1189,10 @@ The six-deck validation fixtures use the independently published
 - [x] Select and validate a query-relative model that trains comfortably with
       Apple Silicon acceleration.
 - [x] Record losses and decision-specific metrics.
+- [ ] Compare the unaugmented baseline with deterministic training-only
+      permutations of exposed-card history and current-hand card order at the
+      same optimizer-update budget; keep validation/test chronological and
+      measure prediction consistency across equivalent permutations.
 - [ ] If the supervised learning curve remains label-limited, pretrain the
       custom transformer on cheap unlabeled visible blackjack sequences and
       measure how much oracle-labeled data fine-tuning then requires.
