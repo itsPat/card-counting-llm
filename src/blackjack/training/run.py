@@ -24,10 +24,9 @@ from blackjack.training.data import (
 )
 from blackjack.training.evaluation import EvaluationReferenceIndex
 from blackjack.training.metrics import (
-    CategoryAccuracy,
     DecisionMetricAccumulator,
     DecisionMetrics,
-    ObjectiveRegret,
+    decision_metrics_data,
 )
 from blackjack.training.model import (
     BlackjackTransformer,
@@ -265,40 +264,6 @@ def train_model(
     )
 
 
-def _category_data(metric: CategoryAccuracy) -> dict[str, int | float | str]:
-    return {
-        "category": metric.category,
-        "correct": metric.correct,
-        "total": metric.total,
-        "accuracy": metric.accuracy,
-    }
-
-
-def _metrics_data(metrics: DecisionMetrics) -> dict[str, object]:
-    return {
-        "mean_loss": metrics.mean_loss,
-        "correct": metrics.correct,
-        "total": metrics.total,
-        "accuracy": metrics.accuracy,
-        "by_kind": [_category_data(metric) for metric in metrics.by_kind],
-        "by_target": [_category_data(metric) for metric in metrics.by_target],
-        "regret_by_kind": [
-            _regret_data(metric) for metric in metrics.regret_by_kind
-        ],
-    }
-
-
-def _regret_data(metric: ObjectiveRegret) -> dict[str, int | float | str]:
-    return {
-        "category": metric.category,
-        "objective": metric.objective.value,
-        "total": metric.total,
-        "mean_regret": metric.mean_regret,
-        "percentile_95_regret": metric.percentile_95_regret,
-        "maximum_regret": metric.maximum_regret,
-    }
-
-
 def _result_data(result: TrainingResult) -> dict[str, object]:
     return {
         "model_configuration": asdict(result.model_configuration),
@@ -315,8 +280,8 @@ def _result_data(result: TrainingResult) -> dict[str, object]:
             {
                 "epoch": epoch.epoch,
                 "elapsed_seconds": epoch.elapsed_seconds,
-                "training": _metrics_data(epoch.training),
-                "validation": _metrics_data(epoch.validation),
+                "training": decision_metrics_data(epoch.training),
+                "validation": decision_metrics_data(epoch.validation),
             }
             for epoch in result.epochs
         ],

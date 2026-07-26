@@ -158,3 +158,43 @@ def _objective_regret(
         percentile_95_regret=ordered[percentile_index],
         maximum_regret=ordered[-1],
     )
+
+
+def _category_data(
+    metric: CategoryAccuracy,
+) -> dict[str, int | float | str]:
+    return {
+        "category": metric.category,
+        "correct": metric.correct,
+        "total": metric.total,
+        "accuracy": metric.accuracy,
+    }
+
+
+def _regret_data(
+    metric: ObjectiveRegret,
+) -> dict[str, int | float | str]:
+    return {
+        "category": metric.category,
+        "objective": metric.objective.value,
+        "total": metric.total,
+        "mean_regret": metric.mean_regret,
+        "percentile_95_regret": metric.percentile_95_regret,
+        "maximum_regret": metric.maximum_regret,
+    }
+
+
+def decision_metrics_data(metrics: DecisionMetrics) -> dict[str, object]:
+    """Convert typed metrics to a transparent JSON-compatible object."""
+
+    return {
+        "mean_loss": metrics.mean_loss,
+        "correct": metrics.correct,
+        "total": metrics.total,
+        "accuracy": metrics.accuracy,
+        "by_kind": [_category_data(metric) for metric in metrics.by_kind],
+        "by_target": [_category_data(metric) for metric in metrics.by_target],
+        "regret_by_kind": [
+            _regret_data(metric) for metric in metrics.regret_by_kind
+        ],
+    }

@@ -827,10 +827,25 @@ initialization seed, optimizer, batch size, and untouched 1,010-decision
 validation split. I selected checkpoints by minimum validation loss and did
 not inspect the test split.
 
-| Sampler | Best epoch | Validation accuracy | Play accuracy | Mean play regret | Mean bet log-growth regret |
+| Model/sampler | Best epoch | Validation accuracy | Play accuracy | Mean play regret | Mean bet log-growth regret |
 | --- | ---: | ---: | ---: | ---: | ---: |
+| Legal-set frequency | — | 62.0% | 47.7% | 0.1545 wager units | 0.0000236 |
 | Natural | 4 | 64.3% | 48.4% | 0.1580 wager units | 0.0000164 |
 | Balanced | 2 | 59.2% | 39.8% | 0.2486 wager units | 0.0000130 |
+
+The frequency control never reads the token sequence. It fits natural target
+counts on the training split and chooses the most frequent currently legal
+token, which reduces here to minimum bet, stand, and decline insurance when
+those actions are available. The natural transformer improves exact accuracy
+by only 2.3 percentage points. It improves bet log-growth regret, but its play
+mistakes are slightly more expensive than the frequency control's mistakes.
+The 100-shoe result therefore verifies the experiment and training loop; it is
+not yet evidence that the transformer learned useful composition-dependent
+play.
+
+```bash
+uv run python -m blackjack.training.baseline data/generated/v4
+```
 
 Aggregate accuracy conceals the main result. The natural checkpoint scored
 zero on validation `<BET_MEDIUM>`, `<BET_HIGH>`, `<DOUBLE>`, and
