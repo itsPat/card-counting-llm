@@ -710,6 +710,42 @@ not be mixed with older exact-play labels.
 
 ### Training
 
+#### Training Input Boundary
+
+I convert each schema-v4 JSONL row into an immutable training item containing
+only token IDs, the target ID, the legal target IDs, the decision kind, and
+row provenance. Oracle action values, return distributions, shoe composition,
+and Monte Carlo uncertainty never cross this boundary, so the model cannot
+accidentally learn from evaluation-only information.
+
+The vocabulary has 29 stable entries: padding, ten visible card values, seven
+structural tokens, and eleven decision tokens. Batches are padded only to the
+longest sequence in that batch. Loss is evaluated at the final query token,
+not across the historical event tokens, and illegal decisions are masked
+before both loss and accuracy are calculated.
+
+Training epochs are deterministic from a recorded seed. Natural sampling
+visits each row once in a shuffled order. The experimental balanced sampler
+draws with replacement using the capped inverse-square-root target weights
+described above. Batches are yielded lazily rather than materialized as a
+whole epoch so this interface can also handle the scaled corpus. Validation
+and test loaders will always use their natural distributions.
+
+Before building the educational transformer, I ran a deliberately disposable
+GRU smoke model against 16 real training rows:
+
+```bash
+uv run python -m blackjack.training.overfit data/generated/v4 \
+  --examples 16 \
+  --updates 100
+```
+
+It moved from 18.8% to 100% training accuracy and reduced decision loss from
+1.2878 to 0.000061. This is evidence that the training plumbing can overfit a
+tiny batch; it is not a model baseline, a candidate architecture, or a
+concession in the transformer experiment. The from-scratch causal transformer
+still belongs in the notebook course.
+
 ### Evaluation
 
 ### Experiments and Interpretability
@@ -850,7 +886,7 @@ The six-deck validation fixtures use the independently published
 ### 6. Build the Notebook Course and Transformer
 
 - [ ] Design the ordered notebook curriculum.
-- [ ] Build the blackjack vocabulary and token encoder.
+- [x] Build the blackjack vocabulary and token encoder.
 - [ ] Visualize token sequences, embeddings, and positional information.
 - [ ] Implement causal self-attention from scratch.
 - [ ] Implement multi-head attention, feed-forward layers, and transformer
@@ -861,14 +897,16 @@ The six-deck validation fixtures use the independently published
 
 ### 7. Train the Model
 
-- [ ] Verify the full pipeline by intentionally overfitting a tiny dataset.
+- [x] Build typed decision-only datasets, lazy batches, legal masks, and
+      deterministic natural and capped inverse-square-root samplers.
+- [x] Verify the full pipeline by intentionally overfitting a tiny dataset.
 - [ ] Train the first natural-sampling baseline on the 100-shoe integration
       dataset.
 - [ ] Compare natural sampling with capped inverse-square-root target
       balancing while leaving validation and test untouched.
 - [ ] Plot nested 100-, 300-, and 1,000-shoe learning curves for accuracy and
       expected-value regret before choosing the final corpus size.
-- [ ] Train only on decision-token targets.
+- [x] Train only on decision-token targets.
 - [ ] Establish deterministic training and checkpointing.
 - [ ] Tune a model that trains comfortably with Apple Silicon acceleration.
 - [ ] Record losses and decision-specific metrics.
