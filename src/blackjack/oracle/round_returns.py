@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from fractions import Fraction
 from functools import cache
+from multiprocessing import get_context
 
 from blackjack.engine.actions import InsuranceAction
 from blackjack.engine.rules import FIXED_RULES, CasinoRules
@@ -33,6 +34,15 @@ class RoundReturnAnalysis:
     @property
     def expected_profit(self) -> Fraction:
         return self.distribution.expected_profit
+
+
+@dataclass(frozen=True, slots=True)
+class _InitialBranchTask:
+    first_player: CardValue
+    first_probability: Fraction
+    composition: Composition
+    rules: CasinoRules
+    unseen_unavailable: int
 
 
 @cache
@@ -109,6 +119,7 @@ def round_return_distribution(
     rules: CasinoRules = FIXED_RULES,
     *,
     unseen_unavailable: int = 1,
+    worker_count: int = 1,
 ) -> RoundReturnAnalysis:
     """Return optimal net-profit probabilities before the initial visible deal.
 
@@ -119,21 +130,62 @@ def round_return_distribution(
 
     if composition.total <= unseen_unavailable + 3:
         raise ValueError("composition is too small for an initial round")
-    branches: list[tuple[Fraction, ReturnDistribution]] = []
-    for first_player in composition.draws():
-        for dealer_upcard in first_player.composition.draws():
-            for second_player in dealer_upcard.composition.draws():
-                probability = (
-                    first_player.probability
-                    * dealer_upcard.probability
-                    * second_player.probability
-                )
-                distribution = _post_visible_distribution(
-                    second_player.composition,
-                    canonical_values((first_player.value, second_player.value)),
-                    dealer_upcard.value,
-                    rules,
-                    unseen_unavailable,
-                )
-                branches.append((probability, distribution))
+    if worker_count <= 0:
+        raise ValueError("worker count must be positive")
+    tasks = tuple(
+        _InitialBranchTask(
+            first_player=draw.value,
+            first_probability=draw.probability,
+            composition=draw.composition,
+            rules=rules,
+            unseen_unavailable=unseen_unavailable,
+        )
+        for draw in composition.draws()
+    )
+    effective_workers = min(worker_count, len(tasks))
+    if effective_workers <= 1:
+        grouped = tuple(_initial_branches(task) for task in tasks)
+    else:
+        pool = get_context("spawn").Pool(processes=effective_workers)
+        try:
+            grouped = tuple(pool.map(_initial_branches, tasks))
+        except BaseException:
+            pool.terminate()
+            pool.join()
+            raise
+        else:
+            pool.close()
+            pool.join()
+    branches = tuple(branch for group in grouped for branch in group)
     return RoundReturnAnalysis(ReturnDistribution.mixture(branches))
+
+
+def _initial_branches(
+    task: _InitialBranchTask,
+) -> tuple[tuple[Fraction, ReturnDistribution], ...]:
+    branches: list[tuple[Fraction, ReturnDistribution]] = []
+    for dealer_upcard in task.composition.draws():
+        for second_player in dealer_upcard.composition.draws():
+            probability = (
+                task.first_probability
+                * dealer_upcard.probability
+                * second_player.probability
+            )
+            distribution = _post_visible_distribution(
+                second_player.composition,
+                canonical_values((task.first_player, second_player.value)),
+                dealer_upcard.value,
+                task.rules,
+                task.unseen_unavailable,
+            )
+            branches.append((probability, distribution))
+    return tuple(branches)
+
+
+def round_return_cache_counts() -> tuple[tuple[str, int, int, int], ...]:
+    info = _post_visible_distribution.cache_info()
+    return (("round_post_visible", info.hits, info.misses, info.currsize),)
+
+
+def clear_round_return_caches() -> None:
+    _post_visible_distribution.cache_clear()

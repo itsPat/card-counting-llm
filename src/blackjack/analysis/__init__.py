@@ -17,6 +17,18 @@ from blackjack.analysis.bet_tokens import (
     run_bet_token_pilot,
     sample_representative_compositions,
 )
+from blackjack.analysis.play_sampling import (
+    ExactPlayState,
+    PlayRolloutConfiguration,
+    PlayRolloutMetrics,
+    PlayRolloutValidation,
+    PlaySamplingConfiguration,
+    PlaySamplingMetrics,
+    PlaySamplingValidation,
+    exact_play_sampling_corpus,
+    run_play_rollout_validation,
+    run_play_sampling_validation,
+)
 
 __all__ = [
     "SELECTED_BET_VOCABULARY",
@@ -25,13 +37,23 @@ __all__ = [
     "BetVocabulary",
     "EmpiricalReturnDistribution",
     "EmpiricalReturnOutcome",
+    "ExactPlayState",
     "PilotConfiguration",
     "PilotMetrics",
     "PilotObservation",
+    "PlayRolloutConfiguration",
+    "PlayRolloutMetrics",
+    "PlayRolloutValidation",
+    "PlaySamplingConfiguration",
+    "PlaySamplingMetrics",
+    "PlaySamplingValidation",
     "SampledComposition",
     "analyze_vocabulary",
     "candidate_vocabularies",
     "empirical_round_return_distribution",
+    "exact_play_sampling_corpus",
     "run_bet_token_pilot",
+    "run_play_rollout_validation",
+    "run_play_sampling_validation",
     "sample_representative_compositions",
 ]

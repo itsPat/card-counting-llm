@@ -2,22 +2,36 @@ from __future__ import annotations
 
 import pytest
 
+from blackjack import PlayerAction
 from blackjack.analysis import (
     SELECTED_BET_VOCABULARY,
     BetAction,
     BetVocabulary,
     EmpiricalReturnDistribution,
     EmpiricalReturnOutcome,
+    ExactPlayState,
     PilotConfiguration,
     PilotObservation,
+    PlayRolloutConfiguration,
+    PlaySamplingConfiguration,
     SampledComposition,
     analyze_vocabulary,
     candidate_vocabularies,
     empirical_round_return_distribution,
     run_bet_token_pilot,
+    run_play_rollout_validation,
+    run_play_sampling_validation,
     sample_representative_compositions,
 )
-from blackjack.oracle import CardValue, Composition
+from blackjack.oracle import (
+    ActionEvaluation,
+    CardValue,
+    Composition,
+    OracleHand,
+    PeekCondition,
+    PlayerSituation,
+    ReturnDistribution,
+)
 
 
 def test_representative_composition_sampling_is_reproducible_and_stratified() -> None:
@@ -119,3 +133,64 @@ def test_candidate_vocabularies_have_stable_unique_tokens() -> None:
         BetAction.HIGH,
     ]
     assert len({vocabulary.name for vocabulary in vocabularies}) == len(vocabularies)
+
+
+def test_play_sampling_validation_is_reproducible_on_exact_distributions() -> None:
+    situation = PlayerSituation(
+        composition=Composition.from_values((CardValue.TEN,) * 8),
+        hand=OracleHand((CardValue.FIVE, CardValue.SIX)),
+        dealer_upcard=CardValue.SIX,
+        peek_condition=PeekCondition.NONE,
+    )
+    evaluations = (
+        ActionEvaluation(PlayerAction.HIT, ReturnDistribution.constant(1)),
+        ActionEvaluation(PlayerAction.STAND, ReturnDistribution.constant(0)),
+    )
+    state = ExactPlayState(
+        name="deterministic",
+        situation=situation,
+        evaluations=evaluations,
+        optimal_action=PlayerAction.HIT,
+        optimal_expected_profit=1,
+        runner_up_gap=1,
+    )
+    configuration = PlaySamplingConfiguration(
+        seed=42,
+        sample_budgets=(10, 100),
+        replications=5,
+    )
+    first = run_play_sampling_validation(configuration, states=(state,))
+    second = run_play_sampling_validation(configuration, states=(state,))
+    assert first == second
+    assert all(metric.action_agreement == 1 for metric in first.metrics)
+    assert all(metric.maximum_exact_regret == 0 for metric in first.metrics)
+
+
+def test_real_play_rollout_validation_is_reproducible() -> None:
+    situation = PlayerSituation(
+        composition=Composition.from_values((CardValue.TEN,) * 20),
+        hand=OracleHand((CardValue.FIVE, CardValue.SIX)),
+        dealer_upcard=CardValue.SIX,
+        peek_condition=PeekCondition.NONE,
+    )
+    evaluations = (
+        ActionEvaluation(PlayerAction.HIT, ReturnDistribution.constant(1)),
+        ActionEvaluation(PlayerAction.STAND, ReturnDistribution.constant(-1)),
+    )
+    state = ExactPlayState(
+        name="deterministic rollout",
+        situation=situation,
+        evaluations=evaluations,
+        optimal_action=PlayerAction.HIT,
+        optimal_expected_profit=1,
+        runner_up_gap=2,
+    )
+    configuration = PlayRolloutConfiguration(
+        seed=43,
+        rollout_budgets_per_action=(10, 100),
+    )
+    first = run_play_rollout_validation(configuration, states=(state,))
+    second = run_play_rollout_validation(configuration, states=(state,))
+    assert first == second
+    assert all(metric.action_agreement == 1 for metric in first.metrics)
+    assert all(metric.maximum_exact_regret == 0 for metric in first.metrics)

@@ -149,6 +149,38 @@ class PlayerSituation:
 
 
 @dataclass(frozen=True, slots=True)
+class RoundPlayerSituation:
+    """A complete in-progress split round from the player's information set."""
+
+    composition: Composition
+    active_hand: OracleHand
+    pending_hands: tuple[OracleHand, ...]
+    finished_hands: tuple[ResolvedHand, ...]
+    dealer_upcard: CardValue
+    peek_condition: PeekCondition
+    rules: CasinoRules = FIXED_RULES
+    unseen_unavailable: int = 0
+
+    def __post_init__(self) -> None:
+        if self.composition.total == 0:
+            raise ValueError("composition must include the hidden dealer card")
+        if self.unseen_unavailable < 0:
+            raise ValueError("unseen unavailable card count cannot be negative")
+        if self.composition.total <= self.unseen_unavailable:
+            raise ValueError("composition must leave a possible dealer hole card")
+        if (
+            self.dealer_upcard in (CardValue.ACE, CardValue.TEN)
+            and self.peek_condition is PeekCondition.NONE
+        ):
+            raise ValueError(
+                "player actions against an Ace or ten require a negative peek"
+            )
+        hand_count = 1 + len(self.pending_hands) + len(self.finished_hands)
+        if hand_count > self.rules.maximum_player_hands:
+            raise ValueError("round has more hands than the rules allow")
+
+
+@dataclass(frozen=True, slots=True)
 class ActionEvaluation:
     action: PlayerAction
     distribution: ReturnDistribution
@@ -224,10 +256,47 @@ def evaluate_actions(
     )
 
 
+def evaluate_round_actions(
+    situation: RoundPlayerSituation,
+) -> tuple[ActionEvaluation, ...]:
+    """Evaluate actions while retaining every correlated split-hand outcome."""
+
+    hands_in_round = 1 + len(situation.pending_hands) + len(situation.finished_hands)
+    actions = _legal_actions(
+        situation.active_hand,
+        hands_in_round,
+        situation.rules,
+    )
+    return tuple(
+        ActionEvaluation(
+            action=action,
+            distribution=_take_action(
+                situation.composition,
+                situation.dealer_upcard,
+                situation.peek_condition,
+                situation.active_hand,
+                situation.pending_hands,
+                situation.finished_hands,
+                action,
+                situation.rules,
+                situation.unseen_unavailable,
+            ),
+        )
+        for action in actions
+    )
+
+
 def optimal_action(situation: PlayerSituation) -> ActionEvaluation:
     evaluations = evaluate_actions(situation)
     if not evaluations:
         raise ValueError("the situation does not require a player action")
+    return max(evaluations, key=lambda evaluation: evaluation.expected_profit)
+
+
+def optimal_round_action(situation: RoundPlayerSituation) -> ActionEvaluation:
+    evaluations = evaluate_round_actions(situation)
+    if not evaluations:
+        raise ValueError("the round situation does not require a player action")
     return max(evaluations, key=lambda evaluation: evaluation.expected_profit)
 
 
@@ -282,8 +351,9 @@ def _optimal_distribution(
             rules,
             unseen_unavailable,
         )
-    choices = tuple(
-        _take_action(
+    best_action = max(
+        actions,
+        key=lambda action: _action_expected_profit(
             composition,
             upcard,
             condition,
@@ -293,10 +363,19 @@ def _optimal_distribution(
             action,
             rules,
             unseen_unavailable,
-        )
-        for action in actions
+        ),
     )
-    return max(choices, key=lambda distribution: distribution.expected_profit)
+    return _take_action(
+        composition,
+        upcard,
+        condition,
+        active,
+        pending,
+        finished,
+        best_action,
+        rules,
+        unseen_unavailable,
+    )
 
 
 @cache
@@ -401,6 +480,229 @@ def _take_action(
     )
 
 
+@cache
+def _optimal_expected_profit(
+    composition: Composition,
+    upcard: CardValue,
+    condition: PeekCondition,
+    active: OracleHand,
+    pending: tuple[OracleHand, ...],
+    finished: tuple[ResolvedHand, ...],
+    rules: CasinoRules,
+    unseen_unavailable: int,
+) -> Fraction:
+    if active.value.is_bust or active.value.total >= 21 or active.split_aces:
+        return _advance_expected_profit(
+            composition,
+            upcard,
+            condition,
+            pending,
+            _add_finished(finished, ResolvedHand.from_hand(active)),
+            rules,
+            unseen_unavailable,
+        )
+    actions = _legal_actions(
+        active,
+        len(finished) + len(pending) + 1,
+        rules,
+    )
+    if not actions:
+        return _advance_expected_profit(
+            composition,
+            upcard,
+            condition,
+            pending,
+            _add_finished(finished, ResolvedHand.from_hand(active)),
+            rules,
+            unseen_unavailable,
+        )
+    return max(
+        _action_expected_profit(
+            composition,
+            upcard,
+            condition,
+            active,
+            pending,
+            finished,
+            action,
+            rules,
+            unseen_unavailable,
+        )
+        for action in actions
+    )
+
+
+@cache
+def _action_expected_profit(
+    composition: Composition,
+    upcard: CardValue,
+    condition: PeekCondition,
+    active: OracleHand,
+    pending: tuple[OracleHand, ...],
+    finished: tuple[ResolvedHand, ...],
+    action: PlayerAction,
+    rules: CasinoRules,
+    unseen_unavailable: int,
+) -> Fraction:
+    hands_in_round = len(finished) + len(pending) + 1
+    if action not in _legal_actions(active, hands_in_round, rules):
+        raise ValueError(f"{action.value} is not legal for this oracle state")
+
+    if action is PlayerAction.STAND:
+        return _advance_expected_profit(
+            composition,
+            upcard,
+            condition,
+            pending,
+            _add_finished(finished, ResolvedHand.from_hand(active)),
+            rules,
+            unseen_unavailable,
+        )
+    if action is PlayerAction.SURRENDER:
+        return _advance_expected_profit(
+            composition,
+            upcard,
+            condition,
+            pending,
+            _add_finished(
+                finished,
+                ResolvedHand.from_hand(active, surrendered=True),
+            ),
+            rules,
+            unseen_unavailable,
+        )
+
+    draws = hidden_hole_draws(
+        composition,
+        upcard,
+        condition,
+        unseen_unavailable,
+    )
+    if not draws:
+        raise ValueError("the player must draw but no shoe card is available")
+    if action is PlayerAction.HIT:
+        return sum(
+            (
+                draw.probability
+                * _optimal_expected_profit(
+                    draw.composition,
+                    upcard,
+                    condition,
+                    active.add(draw.value),
+                    pending,
+                    finished,
+                    rules,
+                    unseen_unavailable,
+                )
+                for draw in draws
+            ),
+            start=Fraction(0),
+        )
+    if action is PlayerAction.DOUBLE:
+        doubled = replace(
+            active,
+            wager=active.wager * 2,
+            can_double=False,
+            can_surrender=False,
+        )
+        return sum(
+            (
+                draw.probability
+                * _advance_expected_profit(
+                    draw.composition,
+                    upcard,
+                    condition,
+                    pending,
+                    _add_finished(
+                        finished,
+                        ResolvedHand.from_hand(doubled.add(draw.value)),
+                    ),
+                    rules,
+                    unseen_unavailable,
+                )
+                for draw in draws
+            ),
+            start=Fraction(0),
+        )
+    return _split_expected_profit(
+        composition,
+        upcard,
+        condition,
+        active,
+        pending,
+        finished,
+        rules,
+        unseen_unavailable,
+    )
+
+
+def _split_expected_profit(
+    composition: Composition,
+    upcard: CardValue,
+    condition: PeekCondition,
+    active: OracleHand,
+    pending: tuple[OracleHand, ...],
+    finished: tuple[ResolvedHand, ...],
+    rules: CasinoRules,
+    unseen_unavailable: int,
+) -> Fraction:
+    pair_value = active.cards[0]
+    split_aces = pair_value is CardValue.ACE
+    base = OracleHand(
+        cards=(pair_value,),
+        wager=active.wager,
+        from_split=True,
+        split_aces=split_aces,
+        can_double=rules.double_after_split,
+        can_surrender=False,
+    )
+    expected = Fraction(0)
+    for left_draw in hidden_hole_draws(
+        composition,
+        upcard,
+        condition,
+        unseen_unavailable,
+    ):
+        left = base.add_split_card(left_draw.value)
+        for right_draw in hidden_hole_draws(
+            left_draw.composition,
+            upcard,
+            condition,
+            unseen_unavailable,
+        ):
+            right = base.add_split_card(right_draw.value)
+            probability = left_draw.probability * right_draw.probability
+            if split_aces and rules.split_aces_one_card_only:
+                child = _advance_expected_profit(
+                    right_draw.composition,
+                    upcard,
+                    condition,
+                    pending,
+                    _add_finished(
+                        _add_finished(
+                            finished,
+                            ResolvedHand.from_hand(left),
+                        ),
+                        ResolvedHand.from_hand(right),
+                    ),
+                    rules,
+                    unseen_unavailable,
+                )
+            else:
+                child = _optimal_expected_profit(
+                    right_draw.composition,
+                    upcard,
+                    condition,
+                    left,
+                    (right, *pending),
+                    finished,
+                    rules,
+                    unseen_unavailable,
+                )
+            expected += probability * child
+    return expected
+
+
 def _split_distribution(
     composition: Composition,
     upcard: CardValue,
@@ -498,6 +800,36 @@ def _advance(
     )
 
 
+def _advance_expected_profit(
+    composition: Composition,
+    upcard: CardValue,
+    condition: PeekCondition,
+    pending: tuple[OracleHand, ...],
+    finished: tuple[ResolvedHand, ...],
+    rules: CasinoRules,
+    unseen_unavailable: int,
+) -> Fraction:
+    if pending:
+        return _optimal_expected_profit(
+            composition,
+            upcard,
+            condition,
+            pending[0],
+            pending[1:],
+            finished,
+            rules,
+            unseen_unavailable,
+        )
+    return _settle_finished_expected_profit(
+        composition,
+        upcard,
+        condition,
+        finished,
+        rules,
+        unseen_unavailable,
+    )
+
+
 @cache
 def _settle_finished(
     composition: Composition,
@@ -536,6 +868,43 @@ def _settle_finished(
     )
 
 
+@cache
+def _settle_finished_expected_profit(
+    composition: Composition,
+    upcard: CardValue,
+    condition: PeekCondition,
+    finished: tuple[ResolvedHand, ...],
+    rules: CasinoRules,
+    unseen_unavailable: int,
+) -> Fraction:
+    if all(resolved.surrendered or resolved.is_bust for resolved in finished):
+        return sum(
+            (_fixed_loss(resolved) for resolved in finished),
+            start=Fraction(0),
+        )
+    dealer = dealer_distribution(
+        composition,
+        upcard,
+        condition,
+        rules,
+        unseen_unavailable,
+    )
+    return sum(
+        (
+            item.probability
+            * sum(
+                (
+                    _profit_against_dealer(resolved, item.outcome, rules)
+                    for resolved in finished
+                ),
+                start=Fraction(0),
+            )
+            for item in dealer.outcomes
+        ),
+        start=Fraction(0),
+    )
+
+
 def _fixed_loss(resolved: ResolvedHand) -> Fraction:
     return -resolved.wager / 2 if resolved.surrendered else -resolved.wager
 
@@ -563,3 +932,51 @@ def _profit_against_dealer(
     if resolved.total == dealer_total:
         return Fraction(0)
     return -resolved.wager
+
+
+def player_cache_counts() -> tuple[tuple[str, int, int, int], ...]:
+    """Expose memoization counters without leaking cached state."""
+
+    optimal = _optimal_distribution.cache_info()
+    action = _take_action.cache_info()
+    settlement = _settle_finished.cache_info()
+    optimal_value = _optimal_expected_profit.cache_info()
+    action_value = _action_expected_profit.cache_info()
+    settlement_value = _settle_finished_expected_profit.cache_info()
+    return (
+        ("player_optimal", optimal.hits, optimal.misses, optimal.currsize),
+        ("player_action", action.hits, action.misses, action.currsize),
+        (
+            "player_settlement",
+            settlement.hits,
+            settlement.misses,
+            settlement.currsize,
+        ),
+        (
+            "player_optimal_value",
+            optimal_value.hits,
+            optimal_value.misses,
+            optimal_value.currsize,
+        ),
+        (
+            "player_action_value",
+            action_value.hits,
+            action_value.misses,
+            action_value.currsize,
+        ),
+        (
+            "player_settlement_value",
+            settlement_value.hits,
+            settlement_value.misses,
+            settlement_value.currsize,
+        ),
+    )
+
+
+def clear_player_caches() -> None:
+    _optimal_distribution.cache_clear()
+    _take_action.cache_clear()
+    _settle_finished.cache_clear()
+    _optimal_expected_profit.cache_clear()
+    _action_expected_profit.cache_clear()
+    _settle_finished_expected_profit.cache_clear()

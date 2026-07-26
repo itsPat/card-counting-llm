@@ -270,3 +270,32 @@ def dealer_distribution(
         condition,
         rules,
     )
+
+
+def dealer_cache_counts() -> tuple[tuple[str, int, int, int], ...]:
+    """Expose dealer memoization counters for profiling."""
+
+    play = _play_dealer.cache_info()
+    distribution = _dealer_distribution_without_unavailable.cache_info()
+    public_distribution = dealer_distribution.cache_info()
+    return (
+        ("dealer_play", play.hits, play.misses, play.currsize),
+        (
+            "dealer_distribution_core",
+            distribution.hits,
+            distribution.misses,
+            distribution.currsize,
+        ),
+        (
+            "dealer_distribution_public",
+            public_distribution.hits,
+            public_distribution.misses,
+            public_distribution.currsize,
+        ),
+    )
+
+
+def clear_dealer_caches() -> None:
+    _play_dealer.cache_clear()
+    _dealer_distribution_without_unavailable.cache_clear()
+    dealer_distribution.cache_clear()

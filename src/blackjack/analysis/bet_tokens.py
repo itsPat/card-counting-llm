@@ -236,6 +236,13 @@ class _MutableComposition:
     def count(self, value: CardValue) -> int:
         return self.counts[CARD_VALUES.index(value)]
 
+    def remove(self, value: CardValue) -> None:
+        index = CARD_VALUES.index(value)
+        if self.counts[index] <= 0:
+            raise ValueError(f"simulation cannot remove {value.value}")
+        self.counts[index] -= 1
+        self.total -= 1
+
 
 def sample_representative_compositions(
     configuration: PilotConfiguration,
@@ -408,15 +415,21 @@ def _simulate_round(
     composition: Composition,
     rng: Random,
     rules: CasinoRules,
+    unseen_unavailable: int,
 ) -> int:
     shoe = _MutableComposition(composition)
+    public = _MutableComposition(composition)
+    for _ in range(unseen_unavailable):
+        shoe.draw(rng)
     first_player = shoe.draw(rng)
+    public.remove(first_player)
     dealer_upcard = shoe.draw(rng)
+    public.remove(dealer_upcard)
     second_player = shoe.draw(rng)
-    public_hole_pool = shoe.total
+    public.remove(second_player)
     take_insurance = (
         dealer_upcard is CardValue.ACE
-        and shoe.count(CardValue.TEN) / public_hole_pool > 1 / 3
+        and public.count(CardValue.TEN) / public.total > 1 / 3
     )
     dealer_hole = shoe.draw(rng)
     dealer_cards = [dealer_upcard, dealer_hole]
@@ -497,17 +510,21 @@ def empirical_round_return_distribution(
     *,
     seed: int,
     rollouts: int,
+    unseen_unavailable: int = 0,
     rules: CasinoRules = FIXED_RULES,
 ) -> EmpiricalReturnDistribution:
     """Estimate the complete return distribution under the pilot policy."""
 
     if rollouts <= 0:
         raise ValueError("rollout count must be positive")
-    if composition.total <= 4:
+    if unseen_unavailable < 0:
+        raise ValueError("unseen unavailable count cannot be negative")
+    if composition.total - unseen_unavailable <= 4:
         raise ValueError("composition is too small to simulate a round")
     rng = Random(seed)
     outcomes: Counter[int] = Counter(
-        _simulate_round(composition, rng, rules) for _ in range(rollouts)
+        _simulate_round(composition, rng, rules, unseen_unavailable)
+        for _ in range(rollouts)
     )
     return EmpiricalReturnDistribution(
         tuple(
@@ -531,6 +548,7 @@ def run_bet_token_pilot(
             sample.composition,
             seed=rollout_seed,
             rollouts=configuration.rollouts_per_composition,
+            unseen_unavailable=sample.unseen_unavailable,
         )
         half_kelly = _empirical_kelly_recommendation(distribution).half_kelly
         observations.append(
