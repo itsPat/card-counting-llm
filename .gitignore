@@ -1,7 +1,9 @@
 .venv/
+dist/
 .ipynb_checkpoints/
 __pycache__/
 *.py[cod]
+src/blackjack/oracle/native/.build/
 
 # Generated datasets and training outputs are reproducible.
 data/generated/
