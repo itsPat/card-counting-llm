@@ -178,12 +178,12 @@ each legal action from the information available to the player at that moment.
 The calculation will account for every card that has been exposed and average
 over cards that remain unknown, including the dealer's hidden card.
 
-The training target will always be the legal action with the highest expected
-value in that exact state. I will not use a basic-strategy chart, a Hi-Lo
-decision table, or the action produced by another learned model as ground
-truth. Those approaches compress or approximate the underlying probabilities;
-this experiment is intended to teach the transformer the optimal
-composition-dependent decision directly.
+For play and insurance, the training target will always be the legal action
+with the highest expected value in that exact state. I will not use a
+basic-strategy chart, a Hi-Lo decision table, or the action produced by another
+learned model as ground truth. Those approaches compress or approximate the
+underlying probabilities; this experiment is intended to teach the transformer
+the optimal composition-dependent play decision directly.
 
 Alongside the selected action, the generated dataset will retain the expected
 value of every legal action as evaluation metadata. This will make it possible
@@ -212,11 +212,24 @@ cutting variance approximately in half. I prefer that tradeoff because it gives
 the betting policy a precise mathematical objective without making maximum
 growth the experiment's only concern.
 
-The calculation will use the complete distribution of possible round returns,
-not the shortcut of dividing estimated advantage by an assumed variance. The
-distribution will incorporate natural blackjack, ordinary wins and losses,
-pushes, surrender, insurance, doubles, splits, and the optimal decisions made
-later in the hand.
+The calculation uses the complete empirical distribution of possible round
+returns, not the shortcut of dividing estimated advantage by an assumed
+variance. The distribution incorporates natural blackjack, ordinary wins and
+losses, pushes, surrender, insurance, doubles, resplits, and correlated
+split-hand outcomes.
+
+For tractability, production bet distributions and play action values use the
+documented fixed H17 basic-strategy continuation policy described below. The
+current play action is still evaluated composition by composition: I force
+each legal first action, simulate the rest of that round under the fixed
+policy, and select the action with the greatest empirical expected return.
+This means the two tasks answer related but distinct questions:
+
+- A play label asks which legal action has the highest expected value in the
+  current composition when later actions in that rollout follow fixed H17
+  basic strategy.
+- A bet label asks what wager is justified by the exact pre-round composition
+  if subsequent play follows the fixed H17 policy.
 
 The model will predict a discrete bankroll fraction rather than a dollar
 amount. The blackjack engine will convert that fraction into a wager using the
@@ -227,7 +240,7 @@ half-Kelly fractions produced by representative shoe compositions. This avoids
 choosing the minimum, maximum, or spacing of the betting vocabulary by
 intuition.
 
-#### Bet-Token Pilot Methodology and Scoped Approximation
+#### Bet-Token Pilot Methodology
 
 The pilot uses 96 pre-deal compositions sampled from 24 deterministic six-deck
 shoes. Four samples from each shoe are stratified across the playable
@@ -247,19 +260,21 @@ composition-dependent because its exact decision is the inexpensive comparison
 between the visible ten-valued-card probability and the one-third break-even
 threshold.
 
-This concession is limited to vocabulary design. The pilot is estimating a
-useful bet range and resolution; it is not producing final training labels.
-The dataset pipeline will continue to use the exact composition-dependent
-oracle for bet, insurance, and play targets. The pilot is deterministic from
-its configuration, reports Monte Carlo standard errors, and keeps the
-continuous return distributions available for inspecting sampling error.
+The production dataset now adopts the same fixed-policy boundary for bet
+labels. The pilot estimates a useful bet range and resolution, while production
+uses many more rollouts per state and a separately versioned random stream.
+Both are deterministic from their configuration, report Monte Carlo standard
+errors, and retain their complete empirical return distributions.
 
-The observed continuous half-Kelly fractions ranged from 0% to 1.208% of
-bankroll. The mean standard error of the simulated expected return was 0.721
-percentage points, so a very fine token grid would claim more precision than
-the pilot supports. I selected the smallest candidate vocabulary that covered
-the observed range, populated every class, and kept the 95th-percentile
-absolute rounding error below 0.15 percentage points:
+After correctly marginalizing the one unknown burn card, the observed
+continuous half-Kelly fractions ranged from 0% to 0.995% of bankroll. The mean
+standard error of the simulated expected return was 0.722 percentage points,
+so a very fine token grid would claim more precision than the pilot supports.
+I retained the four-token vocabulary because it covers the observed range,
+keeps the output task compact, and has a 95th-percentile absolute rounding
+error of approximately 0.15 percentage points. The upper token deliberately
+provides headroom beyond this small pilot rather than being justified by a
+single rare sample.
 
 The token names are intentionally categorical. Their bankroll fractions are a
 versioned experiment mapping rather than semantics the transformer is expected
@@ -273,12 +288,425 @@ dataset and retraining the model.
 | `<BET_MEDIUM>` | 0.90% |
 | `<BET_HIGH>` | 1.30% |
 
-Across the 96 sampled compositions, the four classes contained 83, 10, 1, and
-2 examples. The imbalance is itself useful evidence: most representative
-states have no estimated positive edge and therefore map to the minimum wager.
-The pilot notebook compares this vocabulary against finer grids and shows that
-additional classes improve rounding error less than the Monte Carlo
+Across the 96 sampled compositions, the four classes contained 80, 10, 6, and
+0 examples. The imbalance is itself useful evidence: most representative
+states have no estimated positive edge and therefore map to the minimum wager,
+while 96 states are not enough to populate the deliberately reserved upper
+class. The pilot notebook compares this vocabulary against finer grids and
+shows that additional classes improve rounding error less than the Monte Carlo
 uncertainty would justify.
+
+#### Dataset Pipeline Methodology
+
+I represent one model decision as one row. The only model-facing fields are an
+ordered `input_tokens` sequence and one `target_token`. Everything else is
+evaluation or reproducibility data and will be excluded by the training data
+loader.
+
+An abbreviated play row can look like this:
+
+```json
+{
+  "input_tokens": [
+    "<HISTORY>", "10", "4", "6", "A",
+    "<CURRENT_HAND>", "<PLAYER>", "10", "6",
+    "<DEALER>", "10", "<PLAY_QUERY>"
+  ],
+  "target_token": "<STAND>",
+  "behavior_token": "<HIT>",
+  "metadata": {
+    "legal_target_tokens": [
+      "<HIT>", "<STAND>", "<DOUBLE>", "<SURRENDER>"
+    ],
+    "shoe_composition": [23, 24, 24, 23, 24, 22, 24, 24, 24, 93],
+    "unseen_unavailable": 2,
+    "evaluation_method": "seeded_monte_carlo_fixed_h17_continuation",
+    "action_values": [
+      {
+        "token": "<STAND>",
+        "expected_profit": {"numerator": -53, "denominator": 100},
+        "monte_carlo": {
+          "seed": 10407177902910792742,
+          "rollouts": 1000000,
+          "expected_profit_standard_error": 0.00084,
+          "expected_profit_confidence_interval_95": [-0.53165, -0.52835]
+        }
+      }
+    ]
+  }
+}
+```
+
+The real row includes an `action_values` object for every legal token and a
+complete empirical return distribution inside each object; I show only one
+action and omit its larger distribution in this compact example.
+
+The different target and behavior tokens are intentional. Insurance uses the
+exact rational oracle. Play and bet targets use their production Monte Carlo
+methods described below, with the exact play oracle retained as a verifier.
+The behavior token is the action used to continue the simulated shoe. By
+default, I take a uniformly sampled non-optimal legal action 20% of the time
+and the target action otherwise. This seeded exploration visits states that a
+purely greedy trajectory would never reach without corrupting their labels.
+Bet decisions do not need an exploratory behavior because the normalized
+wager does not change the cards that become visible.
+
+For a play decision after a split, I send the oracle the active hand, every
+pending hand, and every resolved hand. This preserves the shared dealer
+outcome, finite-shoe card depletion, and the four-hand split limit instead of
+labeling each split hand as an unrelated round. The retained action values are
+therefore complete round-profit distributions, including correlated split-hand
+outcomes.
+
+I construct the oracle composition by subtracting only publicly visible cards
+from a fresh six-deck composition. The burn card, the current dealer hole card,
+and any hole card that remained hidden because every player hand busted or
+surrendered stay inside that public composition. I separately record how many
+of those unknown cards are no longer physically available. The oracle
+marginalizes their identities, so a hidden card changes the possible future
+shoe without leaking its value into either the tokens or metadata.
+
+The label methods are explicit in every row:
+
+- A bet row retains the empirical production round-return distribution,
+  continuous half-Kelly fraction, log-growth value of each bet token, selected
+  discrete fraction, rollout seed and count, expected-return standard error,
+  and approximate 95% confidence interval. Its `evaluation_method` is
+  `seeded_monte_carlo_fixed_h17_basic_strategy`.
+- An insurance row retains the exact return distribution and expected profit
+  for taking and declining. A break-even tie resolves to
+  `<NO_INSURANCE>`.
+- A play row retains the empirical complete-round return distribution,
+  expected profit, rollout seed and count, standard error, and approximate 95%
+  confidence interval for every legal action. Its `evaluation_method` is
+  `seeded_monte_carlo_fixed_h17_continuation`. Empirical ties follow the stable
+  action order: hit, stand, double, split, then surrender.
+- Every ten-valued physical rank is serialized as `10`, while the manifest
+  retains the physical rank sequence needed for exact engine replay.
+
+#### Production Bet-Oracle Methodology and Scoped Concession
+
+I estimate each production bet distribution with 1,000,000 complete seeded
+round rollouts under the fixed six-deck H17 basic-strategy policy. The policy
+includes late surrender, double on any initial two cards, double after split,
+up to four hands, no resplitting Aces, and one-card-only split Aces. Naturals,
+ordinary payouts, doubles, surrender, insurance, and every split hand
+contribute to one correlated round return.
+
+Insurance remains composition-dependent. At an Ace upcard, the simulation
+takes insurance exactly when the public probability of a ten-valued hole card
+exceeds its one-third break-even point. Unknown burned cards and previously
+unrevealed holes are sampled as unavailable before each rollout, but their
+sampled identities are not allowed to influence the insurance decision. This
+preserves the same information boundary seen by the model.
+
+The simulation uses an explicitly implemented SplitMix64 stream and
+rejection-sampled bounded draws. I derive a stable 64-bit seed from the master
+rollout seed, public composition, and count of unknown unavailable cards. I do
+not rely on an undocumented standard-library shuffle, so the complete outcome
+histogram can be replayed exactly.
+
+The stored histogram uses exact integer rollout counts divided by the recorded
+rollout count. I calculate half Kelly from that complete empirical
+distribution. Each row also records the estimated expected-return standard
+error and an approximate 95% confidence interval. These quantify sampling
+uncertainty; they do not convert the fixed playing policy into an optimal one.
+
+The important concession is therefore about the policy being valued, not the
+visible shoe information. The bet oracle still responds to the exact remaining
+composition through natural frequency, dealer outcomes, double and split
+returns, surrender, and insurance. It omits only the additional return gained
+by changing ordinary play decisions as the shoe becomes depleted.
+
+Published results give a useful scale for this bias, although none exactly
+matches my rules:
+
+- The Wizard of Odds calculation for a fresh six-deck H17/DAS game reports
+  only a 0.0031-percentage-point benefit from composition-dependent rather than
+  total-dependent basic play. The benefit is tiny before meaningful depletion:
+  [Total Dependent vs. Composition Dependent Basic](https://wizardofodds.com/games/blackjack/composition-dependent-benefit/).
+- A 2025 study of 50,000 sampled eight-deck compositions at 75% penetration
+  reported average round EV of -0.79% under fixed basic strategy and -0.56%
+  under its semi-optimal composition-dependent policy. Positive-EV rounds
+  increased from 17.7% to 21.9%. Its rules differ materially—S17, no surrender
+  or insurance, no DAS, and approximate splitting—so I treat the
+  0.23-percentage-point difference as scale evidence rather than a correction
+  factor:
+  [Optimal Blackjack Betting Strategies Through Dynamic Programming and Expected Utility Theory](https://arxiv.org/abs/2505.00724).
+- A single-deck H17 experiment at 50% penetration reported about 0.449
+  percentage points of improvement from perfect composition-dependent
+  deviations, with roughly 0.086 points attributed to insurance. Single deck
+  intentionally provides much more information than this six-deck experiment,
+  so it is closer to an upper-bound example:
+  [Rust Blackjack Composition Analyzer and Simulator](https://github.com/joshuaprince/blackjack_composition).
+
+My working expectation is that fixed-policy bet labels conservatively
+underestimate favorable-shoe EV by roughly 0.2 to 0.4 percentage points on
+average, with almost no early-shoe effect and larger errors in unusual,
+deeply-depleted compositions. This is an evidence-informed planning range, not
+a measured result for my exact rules. Because optimal play can always choose
+the fixed-policy action, the policy concession can systematically make the bet
+smaller, but it cannot justify a larger bet than the corresponding optimal-play
+distribution would justify. I accept that lower-growth, lower-risk bias to make
+dataset generation computationally feasible.
+
+The native rollout kernel is deliberately small. Tests compare its aggregate
+distribution with the independent Python pilot simulator, verify exact seeded
+replay, exercise unavailable-card marginalization, and cover deterministic
+edge cases. The rational CDP oracle remains the exact verifier for play and the
+production source for insurance.
+
+#### Bounded Monte Carlo Play Validation
+
+The exact play oracle still has a long computational tail, particularly around
+large split trees. Before replacing production play enumeration, I ran a
+bounded experiment to isolate the amount of error caused by sampling alone.
+The reproducible implementation is
+`blackjack.analysis.run_play_sampling_validation`.
+
+I selected 14 full-shoe hard and soft states covering hit, stand, double, and
+surrender decisions. Six deliberately have less than 0.01 wager units between
+the exact best and second-best actions. For every state, I first calculated the
+complete rational action-return distributions. I then sampled each legal
+action distribution independently at four budgets and repeated the selection
+200 times. Regret is always evaluated with the exact rational values, not the
+sample means.
+
+| Samples per legal action | Exact action agreement | Agreement when exact gap ≥ 0.01 | Mean exact EV regret | 95th-percentile regret |
+| ---: | ---: | ---: | ---: | ---: |
+| 1,000 | 72.21% | 86.62% | 0.3408 pp | 2.7964 pp |
+| 10,000 | 82.96% | 97.81% | 0.0948 pp | 0.7747 pp |
+| 100,000 | 91.54% | 100.00% | 0.0231 pp | 0.0134 pp |
+| 1,000,000 | 96.39% | 100.00% | 0.0015 pp | 0.0000 pp |
+
+Here “pp” means percentage points of the initial wager. At one million samples,
+the largest observed regret was 0.3412 pp and came from a near-tied state. More
+than 95% of selections had exactly zero regret because they matched the
+rational action.
+
+This is intentionally an optimistic lower bound for a production Monte Carlo
+play oracle. The experiment samples already-solved exact distributions, so
+every branch inherits optimal continuation play for free. It excludes pairs,
+resplits, pending split hands, depleted-shoe extremes, and the additional
+search error of estimating later decisions. It establishes that one million
+samples are enough to recover materially separated actions in this small
+corpus; it does not yet establish that a particular rollout or tree-search
+policy reproduces unrestricted CDP at the same rate.
+
+I retained the exact oracle as a verifier and used these metrics as the
+sampling-only baseline for the real rollout comparison below.
+
+#### Production Play-Oracle Methodology and Measured Concession
+
+For every production play state, I force each legal first action and run
+1,000,000 complete-round rollouts. Later actions in each rollout follow the
+same documented H17 basic-strategy policy used by the bet simulator. Dealer
+play, doubles, surrender, all split hands, and their shared dealer outcome are
+settled together. The resulting label therefore estimates
+`Q_fixed(state, first_action)` rather than claiming to enumerate
+`Q_optimal(state, first_action)`.
+
+The simulator samples the current hole card first, conditioning it on the
+public negative peek when applicable. It then samples any other burned or
+previously unrevealed cards as unavailable. Their identities influence the
+physical cards left to draw but never enter the public state, tokens, or policy
+inputs. Each candidate action uses the same deterministic per-rollout random
+stream until its path diverges, a common-random-numbers design that reduces
+comparison noise. Every action stores its replay seed, rollout count, empirical
+return distribution, standard error, and confidence interval.
+
+I compared this real evaluator—not samples from pre-solved distributions—with
+the exact rational oracle on the same 14-state full-shoe corpus:
+
+| Rollouts per legal action | Exact action agreement | Agreement when exact gap ≥ 0.01 | Mean exact EV regret | Maximum exact EV regret | Mean absolute action-value error |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 10,000 | 78.57% | 100.00% | 0.1391 pp | 0.8321 pp | 0.5777 pp |
+| 100,000 | 92.86% | 100.00% | 0.0010 pp | 0.0134 pp | 0.3014 pp |
+| 1,000,000 | 92.86% | 100.00% | 0.0010 pp | 0.0134 pp | 0.0706 pp |
+
+At one million rollouts, the only action disagreement was a three-card hard 16
+against a dealer 10. The exact oracle preferred stand to hit by 0.0134
+percentage points of the initial wager. All eight states whose best action led
+by at least one percentage point agreed. This result supports the production
+switch for ordinary hard/soft decisions, but the corpus is deliberately
+bounded: it does not prove the same agreement rate for every depleted
+composition or large resplit tree. Native tests separately exercise current,
+pending, and resolved split hands so those outcomes are represented correctly.
+
+The remaining concession is policy bias. Sampling more rollouts narrows Monte
+Carlo noise but cannot turn fixed continuation into rational continuation.
+Greedily selecting the best first action against a fixed policy is one policy-
+improvement step, not a full dynamic-programming solution. I accept that
+measured approximation because it removes the exact play oracle's unbounded
+runtime tail while keeping materially separated decisions correct in this
+bounded audit. I will measure held-out exact EV regret during evaluation rather
+than describing these targets as mathematically optimal.
+
+I assign complete shoes to training, validation, or test before generating
+rows. The default 100-shoe configuration produces an 80/10/10 shoe split.
+No decision from one shoe can cross a split boundary, including exploratory
+states. This prevents a model from seeing an earlier prefix of a held-out
+shoe during training.
+
+Each generated directory contains:
+
+```text
+manifest.json
+.checkpoints/
+shards/
+train.jsonl
+validation.jsonl
+test.jsonl
+```
+
+The manifest records the schema version, fixed casino rules, bet-vocabulary
+mapping inputs, split and exploration configuration, all random seeds, each
+shoe's split, its cut-card position, and its complete top-to-bottom replay.
+Fractions are serialized as integer numerator/denominator pairs. Rational play
+and insurance values remain exact. Empirical bet probabilities are exact
+rollout-count fractions whose common denominator is at most the configured
+rollout count.
+
+Labels can take long enough that interruption is part of the expected
+workflow. I atomically checkpoint every completed decision before applying the
+next behavior action. When I restart the same command, the engine replays the
+shoe from its manifest, validates each cached state, reuses the stored labels,
+and continues at the first missing decision. A configuration mismatch is
+rejected instead of mixing incompatible rows.
+
+Each shoe has its own exploration seed derived from the recorded exploration
+seed, shoe ID, and shoe seed. Shoes can therefore be generated in any order or
+by separate workers without changing their rows. For example, four workers can
+run these commands against the same output directory:
+
+```bash
+uv run python -m blackjack.dataset data/generated/v4 --shard-count 4 --shard-index 0
+uv run python -m blackjack.dataset data/generated/v4 --shard-count 4 --shard-index 1
+uv run python -m blackjack.dataset data/generated/v4 --shard-count 4 --shard-index 2
+uv run python -m blackjack.dataset data/generated/v4 --shard-count 4 --shard-index 3
+```
+
+Each worker owns complete shoes selected by `shoe_id % shard_count`, so
+parallel execution cannot split one shoe across workers. Completed shoes are
+written atomically under `shards/`. When every shoe shard exists, the runner
+assembles the final train, validation, and test JSONL files in stable shoe
+order. The earlier `--bet-workers` option remains accepted for command
+compatibility, but the native fixed-policy simulator does not need nested
+workers. Parallelism belongs at the complete-shoe shard level, where workers
+share no mutable engine state.
+
+A shared SQLite database stores only completed decision labels and short-lived
+ownership claims. WAL mode lets complete-shoe workers reuse identical states
+without putting SQL calls inside the recursive hot path. This is particularly
+useful for the initial fresh-shoe bet state, which is identical for every
+shoe. I do not use Redis: a local networked cache would add serialization and
+coordination overhead to fine-grained states, while SQLite already supplies
+the needed durable cross-process reuse.
+
+I can time a bounded production run before launching the complete dataset:
+
+```bash
+uv run python -m blackjack.dataset data/generated/v4 --shoe-count 100 --benchmark
+```
+
+`--benchmark` computes at most two new labels, reports their individual times
+and observed mean, saves them as ordinary checkpoints, and stops.
+`--benchmark N` changes that bound. Re-running the command continues from those
+checkpoints. After the first whole shoe completes, progress output also reports
+a measured ETA for the remaining shoes in that worker's shard.
+
+On July 25, 2026, the rational CDP implementation and the first pure-Python
+float64 CDZ- implementation both exceeded the three-minute cutoff on the first
+fresh-shoe bet label. A later native exhaustive CDZ-/no-resplit solver reduced
+that to 32.0 seconds with four workers, but a 100-shoe dataset still remained
+impractical.
+
+The fixed-policy native simulator now completes 1,000,000 fresh-shoe rollouts
+and the complete bet label in approximately 0.1 seconds on the development
+machine after its one-time compile. The recorded smoke-test estimate was
+-0.4301% with a 0.1141-percentage-point standard error. That is roughly a 320×
+reduction from the previous production label time.
+
+After adding the real first-action evaluator, a clean schema-v4 CLI smoke run
+computed five consecutive production decisions—three bets and two play
+labels—using 1,000,000 rollouts per bet or legal play action in 0.5 seconds
+total. Individual play labels took 0.1 and 0.1 seconds in that sample. A
+resumed run validated and reused all five checkpoints, then computed five more
+labels in 0.8 seconds; its most expensive play label took 0.3 seconds. These
+are bounded measurements on the development machine, not promises for every
+deep split state, but they remove the multi-minute exact-oracle tail from the
+production generator.
+
+#### 100-Shoe Integration Dataset QA
+
+I generated the complete schema-v4 100-shoe dataset with four complete-shoe
+workers. The slowest worker finished in 11 minutes 13 seconds. The assembled
+dataset contains 10,206 decisions: 8,157 training, 1,010 validation, and 1,039
+test rows. Its three JSONL files occupy approximately 30 MB.
+
+I can reproduce the structural and coverage audit with:
+
+```bash
+uv run python -m blackjack.dataset.quality data/generated/v4
+```
+
+The audit parses every row through the typed serializer and rejects duplicate
+or non-contiguous decision indices, mixed dataset IDs or schema versions,
+shoe-level split leakage, unexpected evaluation methods, and missing Monte
+Carlo metadata. This run found no integrity errors. All 100 complete shoes are
+represented in exactly one split. Exploration changed 20.5% of play behaviors
+and 20.9% of insurance behaviors, matching the configured 20% probability
+within ordinary sampling variation.
+
+The longest model input has 245 tokens, so the complete integration dataset
+fits a 256-token context window. Median context lengths are 111 tokens for bet
+rows, 120 for insurance, and 119 for play. Of 5,470 play decisions, 192 have
+less than 0.01 wager units between the best and second-best empirical actions;
+only 21 have less than 0.001. I retain these close states and their action
+values so evaluation can distinguish harmless token disagreements from costly
+ones.
+
+The raw target coverage is intentionally the natural generated distribution:
+
+| Target | Train | Validation | Test |
+| --- | ---: | ---: | ---: |
+| `<BET_MIN>` | 3,125 | 345 | 413 |
+| `<BET_LOW>` | 260 | 53 | 39 |
+| `<BET_MEDIUM>` | 82 | 34 | 1 |
+| `<BET_HIGH>` | 40 | 8 | 1 |
+| `<HIT>` | 1,738 | 204 | 207 |
+| `<STAND>` | 2,042 | 255 | 270 |
+| `<DOUBLE>` | 359 | 56 | 45 |
+| `<SPLIT>` | 103 | 6 | 8 |
+| `<SURRENDER>` | 147 | 14 | 16 |
+| `<INSURANCE>` | 23 | 9 | 3 |
+| `<NO_INSURANCE>` | 238 | 26 | 36 |
+
+This makes 100 shoes an integration and overfitting dataset, not a credible
+final training corpus. In particular, one held-out example cannot measure a
+bet class. Based on these observed rates, 5,000 shoes should put the scarcest
+training targets around one to two thousand examples; 10,000 shoes should put
+them in the low thousands and give substantially better held-out coverage. I
+will choose between those sizes using learning curves from nested 100-, 300-,
+and 1,000-shoe subsets rather than generating the largest corpus blindly.
+
+I do not rewrite the raw distribution to make classes equal. For the first
+training experiment I will compare natural row sampling with capped,
+square-root class balancing. The balanced sampler will revisit rare valid
+training rows more often, with weight proportional to the inverse square root
+of class frequency and a maximum amplification cap. Validation and test remain
+untouched so overall accuracy, EV regret, and bankroll results reflect real
+shoe frequency. I will also report per-target metrics because natural aggregate
+accuracy can hide complete failure on split, surrender, insurance, or a rare
+bet class. If a class has too few distinct rows, more shoes or valid targeted
+state generation—not unlimited resampling—must provide the missing diversity.
+
+SQLite reuse, atomic checkpoints, and deterministic shoe shards still make
+interruption safe. Generated data and locally compiled native artifacts stay
+out of Git because the source, configuration, and manifest make them
+reproducible. Dataset schema v4 intentionally rejects earlier output
+directories; empirical per-action distributions and uncertainty metadata must
+not be mixed with older exact-play labels.
 
 ### Training
 
@@ -296,6 +724,11 @@ Install the project and every development/notebook dependency:
 uv sync --all-groups
 ```
 
+The production bet and play oracles also need a local C++20 compiler. On
+macOS, the Command Line Tools provide `c++`; the first empirical label compiles
+the small native kernel automatically and caches the ignored library beside
+its source.
+
 In VS Code, select `.venv/bin/python` as the Python interpreter. Then run:
 
 ```bash
@@ -307,6 +740,15 @@ uv run ruff check .
 Open `notebooks/01_blackjack_engine.ipynb` for the visual engine walkthrough or
 `notebooks/02_bet_token_pilot.ipynb` for the reproducible bet-vocabulary
 analysis. Select the same `.venv/bin/python` environment for either notebook.
+
+To benchmark the production generator with resumable checkpoints, choose an
+output directory under the ignored `data/generated/` tree:
+
+```bash
+uv run python -m blackjack.dataset data/generated/v4 --shoe-count 100 --benchmark
+```
+
+Remove `--benchmark` when the measured cost and worker count are acceptable.
 
 ---
 
@@ -371,16 +813,39 @@ The six-deck validation fixtures use the independently published
 
 ### 5. Build the Dataset Pipeline
 
-- [ ] Generate reproducible complete shoes with the blackjack engine.
-- [ ] Use the oracle to label every bet, insurance, and play decision.
-- [ ] Include enough state exploration to cover decisions beyond a single
+- [x] Generate reproducible complete shoes with the blackjack engine.
+- [x] Use the oracle to label every bet, insurance, and play decision.
+- [x] Include enough state exploration to cover decisions beyond a single
       optimal trajectory.
-- [ ] Convert each decision into the minimal model input and one target token.
-- [ ] Retain action values, return distributions, and shoe composition as
+- [x] Convert each decision into the minimal model input and one target token.
+- [x] Retain action values, return distributions, and shoe composition as
       evaluation-only metadata.
-- [ ] Split training, validation, and test data by complete shoe.
-- [ ] Prevent decisions from the same shoe from crossing dataset splits.
-- [ ] Record generation configuration and random seeds with every dataset.
+- [x] Split training, validation, and test data by complete shoe.
+- [x] Prevent decisions from the same shoe from crossing dataset splits.
+- [x] Record generation configuration and random seeds with every dataset.
+- [x] Add atomic decision checkpoints, exact replay validation, progress
+      reporting, and independent complete-shoe worker shards.
+- [x] Add a shared SQLite label cache for completed decision labels.
+- [x] Add deterministic native fixed-policy Monte Carlo production bet labels,
+      including unavailable-card marginalization and exact insurance.
+- [x] Add deterministic native first-action Monte Carlo production play labels
+      with complete correlated round settlement.
+- [x] Compare real fixed-continuation play rollouts against an exact rational
+      corpus and retain the exact oracle as an evaluation verifier.
+- [x] Record rollout replay inputs, sampling uncertainty, and the playing-policy
+      concession in every empirical row and in the methodology.
+- [x] Make a one-million-rollout production bet benchmark complete in a
+      measured 0.1 seconds after compilation.
+- [x] Generate and assemble a 100-shoe schema-v4 integration dataset with four
+      complete-shoe workers.
+- [x] Add reproducible integrity, coverage, context-length, uncertainty, and
+      close-action QA for assembled datasets.
+- [ ] Benchmark 1, 2, 4, and 8 uncached complete-shoe workers before the
+      scaled generation run.
+- [ ] Generate and QA a 1,000-shoe corpus for 100/300/1,000-shoe learning
+      curves.
+- [ ] Select and generate a 5,000- or 10,000-shoe training corpus only if the
+      1,000-shoe validation curves and rare-target coverage justify it.
 
 ### 6. Build the Notebook Course and Transformer
 
@@ -397,8 +862,13 @@ The six-deck validation fixtures use the independently published
 ### 7. Train the Model
 
 - [ ] Verify the full pipeline by intentionally overfitting a tiny dataset.
+- [ ] Train the first natural-sampling baseline on the 100-shoe integration
+      dataset.
+- [ ] Compare natural sampling with capped inverse-square-root target
+      balancing while leaving validation and test untouched.
+- [ ] Plot nested 100-, 300-, and 1,000-shoe learning curves for accuracy and
+      expected-value regret before choosing the final corpus size.
 - [ ] Train only on decision-token targets.
-- [ ] Balance bet, insurance, and play decisions during training.
 - [ ] Establish deterministic training and checkpointing.
 - [ ] Tune a model that trains comfortably with Apple Silicon acceleration.
 - [ ] Record losses and decision-specific metrics.
