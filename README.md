@@ -756,6 +756,32 @@ Re-running the exact command resumes completed work. The shared existing cache
 can reuse canonical oracle states, but the v5 dataset still receives its own
 manifest, checkpoints, shards, and final split files.
 
+#### 1,000-Shoe Corpus
+
+The measured eight-worker run completed all 1,000 shoes in 3,265.4 seconds
+(54 minutes 25 seconds), producing 102,484 decisions. This is about 31.4
+decisions per second end to end, including shoe simulation, one-million-rollout
+labels, checkpoint writes, and final split assembly. No decision checkpoints
+were reused during this run, so this is a clean scaled-generation measurement.
+
+I validated the assembled corpus before training. It contains 81,973 training,
+10,235 validation, and 10,276 test decisions, with complete-shoe isolation
+between splits. Contexts remain within the 256-token model window: the longest
+bet, insurance, and play contexts are 242, 243, and 248 tokens. All 1,000 shoes
+contribute minimum-bet, hit, and stand examples; the rarer labels now include
+4,633 doubles, 1,801 surrenders, 1,202 splits, 524 high bets, and 341 insurance
+takes. The high-bet class appears in 111 distinct shoes and insurance in 196,
+which is enough to measure learning trends but not yet evidence that the final
+corpus is large enough.
+
+The bet-label Monte Carlo standard error has a median of 0.00114 wager units.
+For play, 2,003 of 54,832 decisions have a best-versus-second-best margin below
+one percentage point, including 225 below one tenth of a percentage point.
+Those close decisions are retained with their uncertainty metadata rather than
+silently treated as equally certain labels. The learning curves must therefore
+be read together with expected-value regret: disagreeing on a near-tie is not
+equivalent to missing a large-margin action.
+
 ### Training
 
 #### Training Input Boundary
@@ -1056,7 +1082,7 @@ The six-deck validation fixtures use the independently published
       close-action QA for assembled datasets.
 - [x] Benchmark 1, 2, 4, and 8 uncached complete-shoe workers before the
       scaled generation run.
-- [ ] Generate and QA a 1,000-shoe corpus for 100/300/1,000-shoe learning
+- [x] Generate and QA a 1,000-shoe corpus for 100/300/1,000-shoe learning
       curves.
 - [ ] Select and generate a 5,000- or 10,000-shoe training corpus only if the
       1,000-shoe validation curves and rare-target coverage justify it.
