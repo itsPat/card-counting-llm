@@ -18,9 +18,11 @@ from blackjack.dataset import (
 from blackjack.oracle import Composition
 from blackjack.training import (
     BLACKJACK_VOCABULARY,
+    CardOrderAugmentation,
     DecisionBatch,
     DecisionCollator,
     DecisionDataset,
+    DecisionLoader,
     EncodedDecision,
     SamplingConfiguration,
     SamplingStrategy,
@@ -173,6 +175,65 @@ def test_epoch_loaders_are_seeded_and_change_order_between_epochs() -> None:
         ),
     )
     assert sum(batch.batch_size for batch in balanced.batches(0)) == len(dataset)
+
+
+def test_card_order_augmentation_is_deterministic_and_label_preserving() -> None:
+    inputs = (
+        "<HISTORY>",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "<CURRENT_HAND>",
+        "<PLAYER>",
+        "A",
+        "6",
+        "4",
+        "<DEALER>",
+        "10",
+        "<PLAY_QUERY>",
+    )
+    example = _encoded(0, "<STAND>", inputs=inputs)
+    dataset = DecisionDataset((example,))
+    configuration = SamplingConfiguration(
+        seed=91,
+        card_order_augmentation=CardOrderAugmentation.PERMUTE,
+    )
+    first = build_decision_loader(
+        dataset,
+        batch_size=1,
+        sampling=configuration,
+    )
+    second = build_decision_loader(
+        dataset,
+        batch_size=1,
+        sampling=configuration,
+    )
+
+    def sequence(loader: DecisionLoader, epoch: int) -> tuple[str, ...]:
+        batch = next(loader.batches(epoch))
+        length = int(batch.prediction_positions[0].item()) + 1
+        return BLACKJACK_VOCABULARY.decode(
+            tuple(int(value) for value in batch.input_ids[0, :length])
+        )
+
+    epoch_zero = sequence(first, 0)
+    assert epoch_zero == sequence(second, 0)
+    permutations = {sequence(first, epoch) for epoch in range(4)}
+    assert len(permutations) > 1
+    for tokens in permutations:
+        history_end = tokens.index("<CURRENT_HAND>")
+        player_start = tokens.index("<PLAYER>") + 1
+        player_end = tokens.index("<DEALER>")
+        assert sorted(tokens[1:history_end]) == sorted(inputs[1:7])
+        assert sorted(tokens[player_start:player_end]) == ["4", "6", "A"]
+        assert tokens[player_end:] == ("<DEALER>", "10", "<PLAY_QUERY>")
+
+    batch = next(first.batches(0))
+    assert int(batch.target_ids[0].item()) == example.target_id
+    assert batch.batch_size == len(dataset)
 
 
 def test_dataset_can_select_a_nested_original_shoe_prefix() -> None:

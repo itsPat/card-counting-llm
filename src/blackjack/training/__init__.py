@@ -1,6 +1,7 @@
 """Typed model-input infrastructure for blackjack decision training."""
 
 from blackjack.training.data import (
+    CardOrderAugmentation,
     DecisionBatch,
     DecisionCollator,
     DecisionDataset,
@@ -34,6 +35,7 @@ __all__ = [
     "PAD_TOKEN",
     "BlackjackTransformer",
     "BlackjackVocabulary",
+    "CardOrderAugmentation",
     "CausalSelfAttention",
     "DecisionBatch",
     "DecisionCollator",

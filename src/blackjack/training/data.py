@@ -242,11 +242,19 @@ class SamplingStrategy(StrEnum):
     BALANCED = "balanced"
 
 
+class CardOrderAugmentation(StrEnum):
+    NONE = "none"
+    PERMUTE = "permute"
+
+
 @dataclass(frozen=True, slots=True)
 class SamplingConfiguration:
     strategy: SamplingStrategy = SamplingStrategy.NATURAL
     seed: int = 20250731
     maximum_class_amplification: float = 10.0
+    card_order_augmentation: CardOrderAugmentation = (
+        CardOrderAugmentation.NONE
+    )
 
     def __post_init__(self) -> None:
         if self.seed < 0:
@@ -332,7 +340,16 @@ class DecisionLoader:
             if self._drop_last and len(batch_indices) < self._batch_size:
                 break
             yield self._collator(
-                tuple(self._dataset[index] for index in batch_indices)
+                tuple(
+                    _augment_card_order(
+                        self._dataset[index],
+                        self._dataset.vocabulary,
+                        self._sampling,
+                        epoch=epoch,
+                        sample_position=start + offset,
+                    )
+                    for offset, index in enumerate(batch_indices)
+                )
             )
 
 
@@ -354,6 +371,92 @@ def build_decision_loader(
         sampling=configuration,
         drop_last=drop_last,
     )
+
+
+def _augment_card_order(
+    example: EncodedDecision,
+    vocabulary: BlackjackVocabulary,
+    sampling: SamplingConfiguration,
+    *,
+    epoch: int,
+    sample_position: int,
+) -> EncodedDecision:
+    if (
+        sampling.card_order_augmentation
+        is CardOrderAugmentation.NONE
+    ):
+        return example
+    tokens = list(vocabulary.decode(example.input_ids))
+    seed = _augmentation_seed(
+        sampling.seed,
+        epoch,
+        example.shoe_id,
+        example.decision_index,
+        sample_position,
+    )
+    try:
+        history_start = tokens.index("<HISTORY>") + 1
+    except ValueError as error:
+        raise ValueError("decision input lacks history structure") from error
+    if example.kind is DecisionKind.BET:
+        try:
+            history_end = tokens.index("<BET_QUERY>", history_start)
+        except ValueError as error:
+            raise ValueError("bet input lacks query structure") from error
+        _shuffle_slice(tokens, history_start, history_end, seed)
+    else:
+        try:
+            history_end = tokens.index("<CURRENT_HAND>", history_start)
+            player_start = tokens.index("<PLAYER>", history_end) + 1
+            player_end = tokens.index("<DEALER>", player_start)
+        except ValueError as error:
+            raise ValueError(
+                "play input lacks history/player/dealer structure"
+            ) from error
+        seed = _shuffle_slice(tokens, history_start, history_end, seed)
+        _shuffle_slice(tokens, player_start, player_end, seed)
+    return EncodedDecision(
+        input_ids=vocabulary.encode(tuple(tokens)),
+        target_id=example.target_id,
+        legal_token_ids=example.legal_token_ids,
+        kind=example.kind,
+        shoe_id=example.shoe_id,
+        decision_index=example.decision_index,
+    )
+
+
+def _augmentation_seed(
+    seed: int,
+    epoch: int,
+    shoe_id: int,
+    decision_index: int,
+    sample_position: int,
+) -> int:
+    state = seed & ((1 << 64) - 1)
+    for value in (epoch, shoe_id, decision_index, sample_position):
+        state = _splitmix64(state ^ (value & ((1 << 64) - 1)))
+    return state
+
+
+def _splitmix64(value: int) -> int:
+    mask = (1 << 64) - 1
+    mixed = (value + 0x9E3779B97F4A7C15) & mask
+    mixed = ((mixed ^ (mixed >> 30)) * 0xBF58476D1CE4E5B9) & mask
+    mixed = ((mixed ^ (mixed >> 27)) * 0x94D049BB133111EB) & mask
+    return (mixed ^ (mixed >> 31)) & mask
+
+
+def _shuffle_slice(
+    tokens: list[str],
+    start: int,
+    end: int,
+    state: int,
+) -> int:
+    for index in range(end - 1, start, -1):
+        state = _splitmix64(state)
+        selected = start + state % (index - start + 1)
+        tokens[index], tokens[selected] = tokens[selected], tokens[index]
+    return state
 
 
 def legal_decision_logits(logits: Tensor, batch: DecisionBatch) -> Tensor:

@@ -999,6 +999,128 @@ whether the next constraint is invariance, model behavior, or genuinely
 independent oracle-labeled compositions before I spend several more hours
 generating data.
 
+#### Six-Deck H17 Hi-Lo Control
+
+I added a visibility-matched Hi-Lo control before interpreting the transformer
+as a card counter. It assigns `+1` to 2–6, `0` to 7–9, and `-1` to ten-valued
+cards and Aces, then floors the running count divided by estimated decks
+remaining. These are the standard balanced tags and true-count conversion
+described by the
+[Wizard of Odds Hi-Lo reference](https://wizardofodds.com/games/blackjack/card-counting/high-low/).
+For play, the control starts from the same six-deck H17 basic strategy used
+elsewhere in this project and applies the H17 Illustrious 18 and Fab 4 indices
+from this
+[six-deck H17 deviation chart](https://www.blackjacktrainer.fyi/charts/deviations).
+It takes insurance at true count `+3` or higher.
+
+Hi-Lo does not define one universal bet ramp. I inspected only the v5 training
+split, fixed the thresholds before evaluating validation, and mapped the four
+existing bankroll tokens as follows:
+
+| Floored true count | Bet token |
+| ---: | --- |
+| Below `+2` | `<BET_MIN>` |
+| `+2` to `+3` | `<BET_LOW>` |
+| `+4` to `+5` | `<BET_MEDIUM>` |
+| `+6` or higher | `<BET_HIGH>` |
+
+This is a token-matched control rather than a claim about an ideal casino bet
+spread. It receives exactly the model sequence and legal-action mask. In
+particular, it estimates decks remaining as `(312 - visible token count) / 52`;
+it does not receive a separate count of burned or face-down unavailable cards
+because those values are absent from the model input too.
+
+On the untouched 10,235-decision validation split:
+
+| Control | Overall accuracy | Bet accuracy | Insurance accuracy | Play accuracy | Composition deviations | Mean play regret | Mean half-Kelly fraction error |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| H17 Hi-Lo | 94.8% | 93.9% | 90.1% | 95.8% | 34.8% | 0.00146 wagers | 0.1083 pp |
+| Natural transformer | 95.8% | 96.0% | 94.9% | 95.7% | 50.6% | 0.00430 wagers | 0.1016 pp |
+| Balanced transformer | 95.8% | 96.1% | 94.3% | 95.3% | 56.6% | 0.00318 wagers | 0.1011 pp |
+
+The transformers recover more of the oracle's composition-dependent targets,
+but Hi-Lo still has lower value-weighted play regret. This is an important
+distinction: the learned models discover more deviations while also making
+some costly errors on ordinary states that the mature counting system avoids.
+Aggregate token accuracy alone would hide that result.
+
+```bash
+uv run python -m blackjack.training.baseline \
+  data/generated/v5 \
+  --training-shoe-prefix 1000 \
+  --policy hi-lo
+```
+
+#### Card-Order Permutation Experiment
+
+For blackjack composition, the multiset of previously exposed cards matters,
+not the order in which those historical cards appeared. Card order within the
+current hand is similarly irrelevant. I therefore added deterministic,
+training-only augmentation that independently shuffles the `<HISTORY>` cards
+and current `<PLAYER>` cards while leaving the dealer upcard, structure,
+query, legal actions, target, and provenance unchanged.
+
+The augmentation is dynamic rather than copied into the JSONL corpus. Each
+original training row is still sampled once per natural epoch, but a seed
+derived from the training seed, epoch, shoe ID, decision index, and sample
+position produces a different reproducible Fisher–Yates permutation. This
+provides up to fifteen presentations of the same labeled state without another
+oracle call, without increasing the optimizer-update budget, and without
+pretending those variants are independent labels. Validation and test remain
+in their original chronological order for every primary metric.
+
+I trained one matched 1,000-shoe natural-sampling model with this augmentation.
+It used the same 81,973 training decisions, initialization, optimizer, batch
+size, 15 epochs, validation set, and minimum-validation-loss checkpoint rule
+as the unaugmented run.
+
+| 1,000-shoe model | Best epoch | Overall accuracy | Play accuracy | Composition deviations | Mean play regret | Mean half-Kelly fraction error |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Natural, chronological inputs | 10 | 95.769% | 95.664% | 50.6% | 0.00430 wagers | 0.1016 pp |
+| Natural, permuted training inputs | 13 | 95.779% | 95.591% | 55.1% | 0.00261 wagers | 0.1012 pp |
+
+Headline accuracy is tied: the augmented model gets one more validation
+decision correct overall and four fewer play decisions correct. The useful
+difference is value-sensitive. It gets 12 more of the 267
+composition-dependent play states correct and lowers mean play regret by 39%.
+Insurance regret rises from 0.00061 to 0.00087 wagers, so this is a measured
+tradeoff rather than an unqualified win.
+
+As a secondary audit, I applied four deterministic valid permutations to each
+validation row without using those variants for checkpoint selection. Of
+40,249 comparisons where a permutation actually changed the input, the
+unaugmented model preserved its prediction 97.41% of the time and the augmented
+model did so 97.91% of the time. The unaugmented model's accuracy fell from
+95.77% to 95.61% on permuted inputs; the augmented model moved from 95.78% to
+95.80%. This supports the intended invariance, although one training seed is
+not enough to treat the exact improvement as a general result.
+
+The evidence now justifies a bounded 5,000-shoe corpus rather than jumping
+directly to 10,000. Both natural and balanced learning curves improve strongly
+from 300 to 1,000 shoes; cheap valid augmentation reduces regret but does not
+remove the need for independent compositions; and the learned model still has
+higher play regret than Hi-Lo. Five thousand shoes should test whether that gap
+is label-limited while providing roughly five times the rare-target coverage.
+I will keep the test split sealed and run corpus QA before choosing the final
+training schedule.
+
+```bash
+uv run python -m blackjack.training.run \
+  data/generated/v5 \
+  artifacts/training/v5-natural-1000-permuted \
+  --training-shoe-prefix 1000 \
+  --sampling natural \
+  --card-order-augmentation permute \
+  --device mps
+
+uv run python -m blackjack.training.invariance \
+  data/generated/v5 \
+  artifacts/training/v5-natural-1000 \
+  artifacts/training/v5-natural-1000-permuted \
+  --permutations 4 \
+  --device mps
+```
+
 The first formal point can be reproduced with:
 
 ```bash
@@ -1157,8 +1279,10 @@ The six-deck validation fixtures use the independently published
       scaled generation run.
 - [x] Generate and QA a 1,000-shoe corpus for 100/300/1,000-shoe learning
       curves.
-- [ ] Select and generate a 5,000- or 10,000-shoe training corpus only if the
-      1,000-shoe validation curves and rare-target coverage justify it.
+- [x] Use the 100/300/1,000-shoe curves, Hi-Lo control, and permutation
+      experiment to select 5,000 shoes as the next bounded scale point.
+- [ ] Generate and QA the 5,000-shoe corpus before choosing the final training
+      schedule; scale to 10,000 only if that result remains data-limited.
 
 ### 6. Build the Notebook Course and Transformer
 
@@ -1189,7 +1313,7 @@ The six-deck validation fixtures use the independently published
 - [x] Select and validate a query-relative model that trains comfortably with
       Apple Silicon acceleration.
 - [x] Record losses and decision-specific metrics.
-- [ ] Compare the unaugmented baseline with deterministic training-only
+- [x] Compare the unaugmented baseline with deterministic training-only
       permutations of exposed-card history and current-hand card order at the
       same optimizer-update budget; keep validation/test chronological and
       measure prediction consistency across equivalent permutations.
@@ -1211,7 +1335,7 @@ The six-deck validation fixtures use the independently published
       half-Kelly-aligned bet-fraction error and absolute log-growth change;
       recompute every reported bet metric from retained checkpoints.
 - [ ] Evaluate complete bankroll trajectories on held-out shoes.
-- [ ] Compare against no-history and basic-strategy controls plus a
+- [x] Compare against no-history and basic-strategy controls plus a
       predeclared six-deck H17 Hi-Lo system with public running/true count, a
       tokenized bet ramp, insurance threshold, and documented play indices.
 - [ ] Break results down by shoe penetration and remaining composition.

@@ -16,6 +16,7 @@ from torch import Tensor
 from blackjack.dataset import DatasetSplit
 from blackjack.training.baseline import BasicStrategyBaseline
 from blackjack.training.data import (
+    CardOrderAugmentation,
     DecisionBatch,
     DecisionDataset,
     SamplingConfiguration,
@@ -52,6 +53,9 @@ class TrainingConfiguration:
     seed: int = 20250801
     sampling_strategy: SamplingStrategy = SamplingStrategy.NATURAL
     maximum_class_amplification: float = 10.0
+    card_order_augmentation: CardOrderAugmentation = (
+        CardOrderAugmentation.NONE
+    )
     device: TrainingDevice = TrainingDevice.AUTO
 
     def __post_init__(self) -> None:
@@ -204,6 +208,9 @@ def train_model(
             maximum_class_amplification=(
                 training_configuration.maximum_class_amplification
             ),
+            card_order_augmentation=(
+                training_configuration.card_order_augmentation
+            ),
         ),
     )
     epochs: list[EpochResult] = []
@@ -350,6 +357,12 @@ def _argument_parser() -> argparse.ArgumentParser:
         default=SamplingStrategy.NATURAL,
     )
     parser.add_argument(
+        "--card-order-augmentation",
+        type=CardOrderAugmentation,
+        choices=tuple(CardOrderAugmentation),
+        default=CardOrderAugmentation.NONE,
+    )
+    parser.add_argument(
         "--device",
         type=TrainingDevice,
         choices=tuple(TrainingDevice),
@@ -413,6 +426,7 @@ def main() -> None:
         learning_rate=arguments.learning_rate,
         seed=arguments.seed,
         sampling_strategy=arguments.sampling,
+        card_order_augmentation=arguments.card_order_augmentation,
         device=arguments.device,
     )
     model, result = train_model(

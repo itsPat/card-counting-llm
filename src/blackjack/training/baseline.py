@@ -30,6 +30,7 @@ from blackjack.training.data import (
     decision_cross_entropy,
 )
 from blackjack.training.evaluation import EvaluationReferenceIndex
+from blackjack.training.hilo import HiLoBaseline
 from blackjack.training.metrics import (
     DecisionMetricAccumulator,
     DecisionMetrics,
@@ -149,13 +150,21 @@ def evaluate_decision_baseline(
     *,
     batch_size: int = 256,
     references: EvaluationReferenceIndex | None = None,
+    control: DecisionBaseline | None = None,
 ) -> DecisionMetrics:
     accumulator = DecisionMetricAccumulator(dataset.vocabulary, references)
     loader = build_decision_loader(dataset, batch_size=batch_size)
     for batch in loader.batches(epoch=0):
         logits = baseline.logits(batch)
         loss = decision_cross_entropy(logits, batch)
-        accumulator.update(loss, logits, batch)
+        accumulator.update(
+            loss,
+            logits,
+            batch,
+            control_logits=(
+                None if control is None else control.logits(batch)
+            ),
+        )
     return accumulator.finish()
 
 
@@ -177,6 +186,7 @@ def evaluate_frequency_baseline(
 class BaselineKind(StrEnum):
     FREQUENCY = "frequency"
     BASIC_STRATEGY = "basic-strategy"
+    HI_LO = "hi-lo"
 
 
 def _argument_parser() -> argparse.ArgumentParser:
@@ -217,15 +227,21 @@ def main() -> None:
         expected_split=DatasetSplit.VALIDATION,
         vocabulary=validation.vocabulary,
     )
-    baseline: DecisionBaseline = (
-        LegalFrequencyBaseline.fit(training)
-        if arguments.policy is BaselineKind.FREQUENCY
-        else BasicStrategyBaseline(training)
-    )
+    if arguments.policy is BaselineKind.FREQUENCY:
+        baseline: DecisionBaseline = LegalFrequencyBaseline.fit(training)
+    elif arguments.policy is BaselineKind.BASIC_STRATEGY:
+        baseline = BasicStrategyBaseline(training)
+    else:
+        baseline = HiLoBaseline(training)
     metrics = evaluate_decision_baseline(
         baseline,
         validation,
         references=references,
+        control=(
+            BasicStrategyBaseline(training)
+            if arguments.policy is BaselineKind.HI_LO
+            else None
+        ),
     )
     report: dict[str, object] = {
         "training_shoe_count": len(training.shoe_ids),
