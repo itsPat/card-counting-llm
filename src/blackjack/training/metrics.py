@@ -1,0 +1,160 @@
+"""Decision-level training metrics that preserve rare-target visibility."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from math import ceil
+
+from torch import Tensor
+
+from blackjack.dataset import DecisionKind
+from blackjack.training.data import DecisionBatch, legal_decision_logits
+from blackjack.training.evaluation import (
+    DecisionObjective,
+    EvaluationReferenceIndex,
+)
+from blackjack.training.vocabulary import BlackjackVocabulary
+
+
+@dataclass(frozen=True, slots=True)
+class CategoryAccuracy:
+    category: str
+    correct: int
+    total: int
+
+    @property
+    def accuracy(self) -> float:
+        return self.correct / self.total
+
+
+@dataclass(frozen=True, slots=True)
+class DecisionMetrics:
+    mean_loss: float
+    correct: int
+    total: int
+    by_kind: tuple[CategoryAccuracy, ...]
+    by_target: tuple[CategoryAccuracy, ...]
+    regret_by_kind: tuple[ObjectiveRegret, ...] = ()
+
+    @property
+    def accuracy(self) -> float:
+        return self.correct / self.total
+
+
+@dataclass(frozen=True, slots=True)
+class ObjectiveRegret:
+    category: str
+    objective: DecisionObjective
+    total: int
+    mean_regret: float
+    percentile_95_regret: float
+    maximum_regret: float
+
+
+@dataclass(slots=True)
+class _MutableAccuracy:
+    correct: int = 0
+    total: int = 0
+
+    def add(self, correct: bool) -> None:
+        self.total += 1
+        self.correct += int(correct)
+
+
+class DecisionMetricAccumulator:
+    """Accumulate exact accuracy without retaining model predictions."""
+
+    def __init__(
+        self,
+        vocabulary: BlackjackVocabulary,
+        references: EvaluationReferenceIndex | None = None,
+    ) -> None:
+        self._vocabulary = vocabulary
+        self._references = references
+        self._loss_sum = 0.0
+        self._overall = _MutableAccuracy()
+        self._by_kind = {
+            kind: _MutableAccuracy() for kind in DecisionKind
+        }
+        self._by_target: dict[int, _MutableAccuracy] = {}
+        self._regrets: dict[
+            tuple[DecisionKind, DecisionObjective],
+            list[float],
+        ] = {}
+
+    def update(
+        self,
+        loss: Tensor,
+        logits: Tensor,
+        batch: DecisionBatch,
+    ) -> None:
+        selected = legal_decision_logits(logits.detach(), batch)
+        predictions = selected.argmax(dim=1).to("cpu")
+        targets = batch.target_ids.to("cpu")
+        self._loss_sum += float(loss.detach().item()) * batch.batch_size
+        for row, kind in enumerate(batch.kinds):
+            target = int(targets[row].item())
+            correct = int(predictions[row].item()) == target
+            self._overall.add(correct)
+            self._by_kind[kind].add(correct)
+            self._by_target.setdefault(target, _MutableAccuracy()).add(correct)
+            if self._references is not None:
+                reference = self._references.get(
+                    int(batch.shoe_ids[row].item()),
+                    int(batch.decision_indices[row].item()),
+                )
+                if reference.kind is not kind:
+                    raise ValueError(
+                        "evaluation reference decision kind differs"
+                    )
+                key = (kind, reference.objective)
+                self._regrets.setdefault(key, []).append(
+                    reference.regret(int(predictions[row].item()))
+                )
+
+    def finish(self) -> DecisionMetrics:
+        if self._overall.total == 0:
+            raise ValueError("cannot finish empty decision metrics")
+        return DecisionMetrics(
+            mean_loss=self._loss_sum / self._overall.total,
+            correct=self._overall.correct,
+            total=self._overall.total,
+            by_kind=tuple(
+                CategoryAccuracy(
+                    category=kind.value,
+                    correct=counts.correct,
+                    total=counts.total,
+                )
+                for kind, counts in self._by_kind.items()
+                if counts.total
+            ),
+            by_target=tuple(
+                CategoryAccuracy(
+                    category=self._vocabulary.token_for(target),
+                    correct=counts.correct,
+                    total=counts.total,
+                )
+                for target, counts in sorted(self._by_target.items())
+            ),
+            regret_by_kind=tuple(
+                _objective_regret(kind, objective, regrets)
+                for (kind, objective), regrets in self._regrets.items()
+            ),
+        )
+
+
+def _objective_regret(
+    kind: DecisionKind,
+    objective: DecisionObjective,
+    regrets: list[float],
+) -> ObjectiveRegret:
+    ordered = sorted(regrets)
+    percentile_index = ceil(0.95 * len(ordered)) - 1
+    return ObjectiveRegret(
+        category=kind.value,
+        objective=objective,
+        total=len(ordered),
+        mean_regret=sum(ordered) / len(ordered),
+        percentile_95_regret=ordered[percentile_index],
+        maximum_regret=ordered[-1],
+    )

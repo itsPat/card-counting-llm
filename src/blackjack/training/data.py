@@ -14,9 +14,13 @@ from torch import Tensor
 from torch.nn import functional as functional
 from torch.utils.data import Dataset
 
+from blackjack.analysis import BetAction
 from blackjack.dataset import (
     DatasetSplit,
     DecisionKind,
+    DecisionToken,
+    InsuranceToken,
+    PlayToken,
     decision_example_from_json,
 )
 from blackjack.training.vocabulary import (
@@ -363,3 +367,24 @@ def decision_accuracy(logits: Tensor, batch: DecisionBatch) -> float:
     predictions = selected.argmax(dim=1)
     correct = predictions.eq(batch.target_ids.to(logits.device))
     return float(correct.float().mean().item())
+
+
+def decode_decisions(
+    logits: Tensor,
+    batch: DecisionBatch,
+    vocabulary: BlackjackVocabulary = BLACKJACK_VOCABULARY,
+) -> tuple[DecisionToken, ...]:
+    """Decode the highest-scoring legal token into its closed enum type."""
+
+    selected = legal_decision_logits(logits, batch)
+    predicted_ids = selected.argmax(dim=1).to("cpu")
+    decoded: list[DecisionToken] = []
+    for row, kind in enumerate(batch.kinds):
+        token = vocabulary.token_for(int(predicted_ids[row].item()))
+        if kind is DecisionKind.BET:
+            decoded.append(BetAction(token))
+        elif kind is DecisionKind.PLAY:
+            decoded.append(PlayToken(token))
+        else:
+            decoded.append(InsuranceToken(token))
+    return tuple(decoded)

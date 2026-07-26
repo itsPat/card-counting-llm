@@ -11,8 +11,16 @@ from blackjack.training.data import (
     build_decision_loader,
     decision_accuracy,
     decision_cross_entropy,
+    decode_decisions,
     legal_decision_logits,
     target_sampling_weights,
+)
+from blackjack.training.model import (
+    BlackjackTransformer,
+    CausalSelfAttention,
+    FeedForward,
+    TransformerBlock,
+    TransformerConfiguration,
 )
 from blackjack.training.vocabulary import (
     BLACKJACK_VOCABULARY,
@@ -23,17 +31,23 @@ from blackjack.training.vocabulary import (
 __all__ = [
     "BLACKJACK_VOCABULARY",
     "PAD_TOKEN",
+    "BlackjackTransformer",
     "BlackjackVocabulary",
+    "CausalSelfAttention",
     "DecisionBatch",
     "DecisionCollator",
     "DecisionDataset",
     "DecisionLoader",
     "EncodedDecision",
+    "FeedForward",
     "SamplingConfiguration",
     "SamplingStrategy",
+    "TransformerBlock",
+    "TransformerConfiguration",
     "build_decision_loader",
     "decision_accuracy",
     "decision_cross_entropy",
+    "decode_decisions",
     "legal_decision_logits",
     "target_sampling_weights",
 ]

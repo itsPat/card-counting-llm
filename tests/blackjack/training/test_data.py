@@ -26,6 +26,7 @@ from blackjack.training import (
     SamplingStrategy,
     build_decision_loader,
     decision_cross_entropy,
+    decode_decisions,
     legal_decision_logits,
     target_sampling_weights,
 )
@@ -118,6 +119,12 @@ def test_loss_uses_only_query_positions_and_masks_illegal_tokens() -> None:
     assert decision_cross_entropy(logits, batch).item() == pytest.approx(
         0.693147,
         rel=1e-5,
+    )
+    logits[0, 1, BLACKJACK_VOCABULARY.id_for("<HIT>")] = 2
+    logits[1, 1, BLACKJACK_VOCABULARY.id_for("<STAND>")] = 2
+    assert tuple(token.value for token in decode_decisions(logits, batch)) == (
+        "<HIT>",
+        "<STAND>",
     )
 
 
