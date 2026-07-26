@@ -5,13 +5,24 @@ from __future__ import annotations
 import argparse
 import json
 from dataclasses import dataclass
+from enum import StrEnum
 from math import log
 from pathlib import Path
+from typing import Protocol
 
 import torch
 from torch import Tensor
 
-from blackjack.dataset import DatasetSplit
+from blackjack.analysis import BetAction
+from blackjack.dataset import (
+    DatasetSplit,
+    DecisionKind,
+    InsuranceToken,
+    PlayToken,
+    play_token,
+)
+from blackjack.engine import PlayerAction
+from blackjack.oracle import CardValue, basic_strategy_action
 from blackjack.training.data import (
     DecisionBatch,
     DecisionDataset,
@@ -53,8 +64,87 @@ class LegalFrequencyBaseline:
         )
 
 
-def evaluate_frequency_baseline(
-    baseline: LegalFrequencyBaseline,
+class BasicStrategyBaseline:
+    """Use fixed basic strategy while ignoring all visible-card history."""
+
+    def __init__(self, dataset: DecisionDataset) -> None:
+        self._vocabulary = dataset.vocabulary
+
+    def logits(self, batch: DecisionBatch) -> Tensor:
+        logits = torch.zeros(
+            (
+                batch.batch_size,
+                batch.input_ids.shape[1],
+                len(self._vocabulary),
+            ),
+            dtype=torch.float32,
+            device=batch.input_ids.device,
+        )
+        for row, kind in enumerate(batch.kinds):
+            if kind is DecisionKind.BET:
+                token = BetAction.MINIMUM.value
+            elif kind is DecisionKind.INSURANCE:
+                token = InsuranceToken.DECLINE.value
+            else:
+                token = play_token(
+                    self._play_action(batch, row)
+                ).value
+            position = int(batch.prediction_positions[row].item())
+            logits[row, position, self._vocabulary.id_for(token)] = 1
+        return logits
+
+    def _play_action(
+        self,
+        batch: DecisionBatch,
+        row: int,
+    ) -> PlayerAction:
+        length = int(batch.prediction_positions[row].item()) + 1
+        token_ids = tuple(
+            int(token_id)
+            for token_id in batch.input_ids[row, :length]
+        )
+        tokens = self._vocabulary.decode(token_ids)
+        try:
+            player_start = tokens.index("<PLAYER>") + 1
+            dealer_index = tokens.index("<DEALER>", player_start)
+            dealer_token = tokens[dealer_index + 1]
+        except (ValueError, IndexError) as error:
+            raise ValueError("play input lacks player/dealer structure") from error
+        cards = tuple(
+            CardValue(token) for token in tokens[player_start:dealer_index]
+        )
+        legal_actions = tuple(
+            action
+            for token, action in _PLAY_ACTIONS.items()
+            if bool(
+                batch.legal_token_mask[
+                    row,
+                    self._vocabulary.id_for(token.value),
+                ].item()
+            )
+        )
+        return basic_strategy_action(
+            cards,
+            CardValue(dealer_token),
+            legal_actions,
+        )
+
+
+_PLAY_ACTIONS: dict[PlayToken, PlayerAction] = {
+    PlayToken.HIT: PlayerAction.HIT,
+    PlayToken.STAND: PlayerAction.STAND,
+    PlayToken.DOUBLE: PlayerAction.DOUBLE,
+    PlayToken.SPLIT: PlayerAction.SPLIT,
+    PlayToken.SURRENDER: PlayerAction.SURRENDER,
+}
+
+
+class DecisionBaseline(Protocol):
+    def logits(self, batch: DecisionBatch) -> Tensor: ...
+
+
+def evaluate_decision_baseline(
+    baseline: DecisionBaseline,
     dataset: DecisionDataset,
     *,
     batch_size: int = 256,
@@ -69,6 +159,26 @@ def evaluate_frequency_baseline(
     return accumulator.finish()
 
 
+def evaluate_frequency_baseline(
+    baseline: LegalFrequencyBaseline,
+    dataset: DecisionDataset,
+    *,
+    batch_size: int = 256,
+    references: EvaluationReferenceIndex | None = None,
+) -> DecisionMetrics:
+    return evaluate_decision_baseline(
+        baseline,
+        dataset,
+        batch_size=batch_size,
+        references=references,
+    )
+
+
+class BaselineKind(StrEnum):
+    FREQUENCY = "frequency"
+    BASIC_STRATEGY = "basic-strategy"
+
+
 def _argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Evaluate the legal-set target-frequency control.",
@@ -78,6 +188,12 @@ def _argument_parser() -> argparse.ArgumentParser:
         "--training-shoe-prefix",
         type=int,
         help="fit counts only on training rows below this shoe ID",
+    )
+    parser.add_argument(
+        "--policy",
+        type=BaselineKind,
+        choices=tuple(BaselineKind),
+        default=BaselineKind.FREQUENCY,
     )
     return parser
 
@@ -101,8 +217,13 @@ def main() -> None:
         expected_split=DatasetSplit.VALIDATION,
         vocabulary=validation.vocabulary,
     )
-    metrics = evaluate_frequency_baseline(
-        LegalFrequencyBaseline.fit(training),
+    baseline: DecisionBaseline = (
+        LegalFrequencyBaseline.fit(training)
+        if arguments.policy is BaselineKind.FREQUENCY
+        else BasicStrategyBaseline(training)
+    )
+    metrics = evaluate_decision_baseline(
+        baseline,
         validation,
         references=references,
     )

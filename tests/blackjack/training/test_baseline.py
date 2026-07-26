@@ -7,7 +7,9 @@ from blackjack.training import (
     EncodedDecision,
 )
 from blackjack.training.baseline import (
+    BasicStrategyBaseline,
     LegalFrequencyBaseline,
+    evaluate_decision_baseline,
     evaluate_frequency_baseline,
 )
 
@@ -43,3 +45,37 @@ def test_frequency_baseline_uses_counts_but_always_respects_legality() -> None:
     metrics = evaluate_frequency_baseline(baseline, dataset, batch_size=2)
     assert metrics.correct == 4
     assert metrics.total == 5
+
+
+def test_basic_strategy_baseline_reads_current_hand_but_not_history() -> None:
+    examples = (
+        EncodedDecision(
+            input_ids=BLACKJACK_VOCABULARY.encode(
+                (
+                    "<HISTORY>",
+                    "2",
+                    "3",
+                    "<CURRENT_HAND>",
+                    "<PLAYER>",
+                    "10",
+                    "6",
+                    "<DEALER>",
+                    "10",
+                    "<PLAY_QUERY>",
+                )
+            ),
+            target_id=BLACKJACK_VOCABULARY.id_for("<SURRENDER>"),
+            legal_token_ids=BLACKJACK_VOCABULARY.encode(
+                ("<HIT>", "<STAND>", "<SURRENDER>")
+            ),
+            kind=DecisionKind.PLAY,
+            shoe_id=0,
+            decision_index=0,
+        ),
+    )
+    dataset = DecisionDataset(examples)
+    metrics = evaluate_decision_baseline(
+        BasicStrategyBaseline(dataset),
+        dataset,
+    )
+    assert metrics.correct == 1

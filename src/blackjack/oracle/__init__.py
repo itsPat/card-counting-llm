@@ -1,5 +1,6 @@
 """Exact composition-dependent blackjack oracle."""
 
+from blackjack.oracle.basic_strategy import basic_strategy_action
 from blackjack.oracle.cdz import (
     BetSplitPolicy,
     ExhaustiveNumericRoundAnalysis,
@@ -99,6 +100,7 @@ __all__ = [
     "ReturnOutcome",
     "RoundPlayerSituation",
     "RoundReturnAnalysis",
+    "basic_strategy_action",
     "cards_to_values",
     "clear_oracle_caches",
     "dealer_blackjack_probability",
