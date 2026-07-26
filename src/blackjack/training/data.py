@@ -144,6 +144,30 @@ class DecisionDataset(Dataset[EncodedDecision]):
     def targets(self) -> tuple[int, ...]:
         return tuple(example.target_id for example in self._examples)
 
+    @property
+    def shoe_ids(self) -> tuple[int, ...]:
+        return tuple(
+            sorted({example.shoe_id for example in self._examples})
+        )
+
+    def before_shoe_id(self, exclusive_limit: int) -> DecisionDataset:
+        """Return rows from the nested original shoe-ID prefix."""
+
+        if exclusive_limit <= 0:
+            raise ValueError("shoe ID limit must be positive")
+        selected = tuple(
+            example
+            for example in self._examples
+            if example.shoe_id < exclusive_limit
+        )
+        if not selected:
+            raise ValueError("shoe ID limit selects no decisions")
+        return DecisionDataset(
+            selected,
+            vocabulary=self._vocabulary,
+            maximum_context_length=self._maximum_context_length,
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class DecisionBatch:

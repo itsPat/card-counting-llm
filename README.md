@@ -848,6 +848,26 @@ generalization. The 1,000-shoe learning-curve corpus is therefore the next
 data requirement; I will not tune balancing more aggressively on this small
 validation set.
 
+The v4 integration run is not the formal 100-shoe point on the later learning
+curve because split assignment depends on the total corpus size. After v5 is
+complete, every learning-curve run will use the same full v5 validation split
+and an untouched v5 test split. Training rows will expand by original shoe-ID
+prefix: IDs below 100, below 300, and below 1,000. These prefixes contain only
+the training-assigned shoes within each range, so they are strictly nested
+without allowing a validation shoe to become training data. The training
+artifacts record the resulting shoe and decision counts.
+
+For example, the first formal point will use:
+
+```bash
+uv run python -m blackjack.training.run \
+  data/generated/v5 \
+  artifacts/training/v5-natural-100 \
+  --training-shoe-prefix 100 \
+  --sampling natural \
+  --device mps
+```
+
 On Apple Metal, steady-state epochs took approximately eight seconds. Repeating
 the seeded natural run reproduced every rounded metric, while corresponding
 weights differed by at most `4.77e-7`. CPU tests are bit-exact; Metal training

@@ -175,6 +175,18 @@ def test_epoch_loaders_are_seeded_and_change_order_between_epochs() -> None:
     assert sum(batch.batch_size for batch in balanced.batches(0)) == len(dataset)
 
 
+def test_dataset_can_select_a_nested_original_shoe_prefix() -> None:
+    dataset = DecisionDataset(
+        tuple(_encoded(index, "<HIT>") for index in range(8))
+    )
+    assert dataset.shoe_ids == (0, 1, 2, 3)
+    prefix = dataset.before_shoe_id(2)
+    assert prefix.shoe_ids == (0, 1)
+    assert len(prefix) == 4
+    with pytest.raises(ValueError, match="positive"):
+        dataset.before_shoe_id(0)
+
+
 def test_dataset_loads_only_model_fields_from_jsonl(tmp_path: Path) -> None:
     legal = ("<HIT>", "<STAND>")
     example = DecisionExample(

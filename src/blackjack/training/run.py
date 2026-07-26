@@ -83,6 +83,10 @@ class TrainingResult:
     model_configuration: TransformerConfiguration
     training_configuration: TrainingConfiguration
     vocabulary_tokens: tuple[str, ...]
+    training_decision_count: int
+    training_shoe_count: int
+    validation_decision_count: int
+    validation_shoe_count: int
     parameter_count: int
     device: str
     best_epoch: int
@@ -250,6 +254,10 @@ def train_model(
         model_configuration=model_configuration,
         training_configuration=training_configuration,
         vocabulary_tokens=training_dataset.vocabulary.tokens,
+        training_decision_count=len(training_dataset),
+        training_shoe_count=len(training_dataset.shoe_ids),
+        validation_decision_count=len(validation_dataset),
+        validation_shoe_count=len(validation_dataset.shoe_ids),
         parameter_count=model.parameter_count,
         device=str(device),
         best_epoch=best_epoch,
@@ -296,6 +304,10 @@ def _result_data(result: TrainingResult) -> dict[str, object]:
         "model_configuration": asdict(result.model_configuration),
         "training_configuration": asdict(result.training_configuration),
         "vocabulary_tokens": list(result.vocabulary_tokens),
+        "training_decision_count": result.training_decision_count,
+        "training_shoe_count": result.training_shoe_count,
+        "validation_decision_count": result.validation_decision_count,
+        "validation_shoe_count": result.validation_shoe_count,
         "parameter_count": result.parameter_count,
         "device": result.device,
         "best_epoch": result.best_epoch,
@@ -355,6 +367,14 @@ def _argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--feed-forward-dimension", type=int, default=512)
     parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--seed", type=int, default=20250801)
+    parser.add_argument(
+        "--training-shoe-prefix",
+        type=int,
+        help=(
+            "train only on rows whose original shoe ID is below this "
+            "exclusive bound"
+        ),
+    )
     return parser
 
 
@@ -364,6 +384,10 @@ def main() -> None:
         arguments.dataset_directory,
         DatasetSplit.TRAIN,
     )
+    if arguments.training_shoe_prefix is not None:
+        training_dataset = training_dataset.before_shoe_id(
+            arguments.training_shoe_prefix
+        )
     validation_dataset = DecisionDataset.from_directory(
         arguments.dataset_directory,
         DatasetSplit.VALIDATION,
@@ -399,7 +423,9 @@ def main() -> None:
     )
     write_training_artifacts(model, result, arguments.output_directory)
     print(
-        f"saved {result.parameter_count:,}-parameter model and metrics to "
+        f"saved {result.parameter_count:,}-parameter model trained on "
+        f"{result.training_shoe_count} shoes/"
+        f"{result.training_decision_count:,} decisions to "
         f"{arguments.output_directory}",
         flush=True,
     )
