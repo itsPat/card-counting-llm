@@ -708,6 +708,54 @@ reproducible. Dataset schema v4 intentionally rejects earlier output
 directories; empirical per-action distributions and uncertainty metadata must
 not be mixed with older exact-play labels.
 
+#### Complete-Shoe Concurrency Benchmark
+
+I timed the same 16 deterministic shoes at the production one-million-rollout
+settings with 1, 2, 4, and 8 complete-shoe processes. Every case started with
+a fresh SQLite label cache, while the already-compiled native rollout kernel
+was reused. Each case processed 1,621 decisions: 1,605 unique oracle states and
+16 within-run cache hits.
+
+```bash
+uv run python -m blackjack.dataset.benchmark \
+  data/generated/concurrency-benchmark \
+  --shoe-count 16 \
+  --workers 1,2,4,8
+```
+
+The benchmark ran on an ARM Mac with 16 logical CPUs:
+
+| Workers | Wall time | Decisions/second | Speedup |
+| ---: | ---: | ---: | ---: |
+| 1 | 441.4 s | 3.7 | 1.00× |
+| 2 | 243.8 s | 6.6 | 1.81× |
+| 4 | 125.3 s | 12.9 | 3.52× |
+| 8 | 72.4 s | 22.4 | 6.10× |
+
+Eight workers are the measured choice for the 1,000-shoe run. A linear
+projection from this bounded sample is about 75 minutes, before credit for
+states already present in the 100-shoe cache. This is an operational
+benchmark, not a general scaling claim: 16 shoes still expose some
+shoe-to-shoe imbalance, and I briefly ran lightweight type and unit checks
+during the one- and two-worker cases. The four- and eight-worker cases were
+left isolated. The gap is large enough to select eight workers, but I will use
+the completed 1,000-shoe run—not this projection—as the durable throughput
+measurement.
+
+The coordinated generator preserves the same per-decision checkpoints and
+complete-shoe shards as the single-process command:
+
+```bash
+uv run python -m blackjack.dataset.parallel data/generated/v5 \
+  --shoe-count 1000 \
+  --workers 8 \
+  --label-cache data/generated/v4/oracle-labels.sqlite3
+```
+
+Re-running the exact command resumes completed work. The shared existing cache
+can reuse canonical oracle states, but the v5 dataset still receives its own
+manifest, checkpoints, shards, and final split files.
+
 ### Training
 
 #### Training Input Boundary
@@ -745,6 +793,68 @@ It moved from 18.8% to 100% training accuracy and reduced decision loss from
 tiny batch; it is not a model baseline, a candidate architecture, or a
 concession in the transformer experiment. The from-scratch causal transformer
 still belongs in the notebook course.
+
+#### First Working Transformer
+
+I implement the initial decoder-only transformer directly from tensor
+operations rather than calling `torch.nn.Transformer` or fused attention. The
+model uses learned token and positional embeddings, pre-normalized causal
+multi-head self-attention, feed-forward layers, residual connections, and a
+vocabulary projection at every position. Tests demonstrate that changing a
+future token cannot change an earlier logit and that right-padding cannot
+change a real-token logit.
+
+The default baseline has four layers, four 32-dimensional heads, a
+128-dimensional embedding, a 512-dimensional feed-forward layer, and 831,488
+parameters. This is intentionally small enough for repeated Apple Metal
+experiments. The trainer seeds initialization, dropout, and epoch sampling;
+clips gradients; retains the best validation-loss checkpoint; and records
+overall, per-kind, and per-target accuracy. Evaluation joins predictions back
+to the metadata only by shoe and decision index, allowing expected-profit
+regret for play and insurance and expected-log-growth regret for bets without
+putting oracle values into model inputs.
+
+I am proving this implementation and the training settings before turning it
+into the educational notebook sequence. The notebooks will contain the
+working implementation, first-person notes, small tensor examples, and visual
+explanations; I can then comment out cells and rebuild each component myself.
+
+#### 100-Shoe Baseline Results
+
+I trained matched eight-epoch baselines with natural and capped
+inverse-square-root sampling. Both used the same 831,488-parameter model,
+initialization seed, optimizer, batch size, and untouched 1,010-decision
+validation split. I selected checkpoints by minimum validation loss and did
+not inspect the test split.
+
+| Sampler | Best epoch | Validation accuracy | Play accuracy | Mean play regret | Mean bet log-growth regret |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Natural | 4 | 64.3% | 48.4% | 0.1580 wager units | 0.0000164 |
+| Balanced | 2 | 59.2% | 39.8% | 0.2486 wager units | 0.0000130 |
+
+Aggregate accuracy conceals the main result. The natural checkpoint scored
+zero on validation `<BET_MEDIUM>`, `<BET_HIGH>`, `<DOUBLE>`, and
+`<SURRENDER>` examples. The balanced checkpoint recovered 5 of 34 medium bets,
+1 of 8 high bets, and 5 of 6 splits, but still recovered no doubles or
+surrenders and traded too many stands for hits. By epoch 7, the balanced model
+reached 62.5% overall accuracy and began recovering every rare play target,
+including 10 of 56 doubles and 4 of 14 surrenders, but its mean play regret
+remained worse than the natural checkpoint at 0.2201.
+
+This is useful negative evidence rather than a failed pipeline. Resampling can
+change which errors the model makes, but 40 high-bet, 103 split, and 147
+surrender training rows do not contain enough distinct states for robust
+generalization. The 1,000-shoe learning-curve corpus is therefore the next
+data requirement; I will not tune balancing more aggressively on this small
+validation set.
+
+On Apple Metal, steady-state epochs took approximately eight seconds. Repeating
+the seeded natural run reproduced every rounded metric, while corresponding
+weights differed by at most `4.77e-7`. CPU tests are bit-exact; Metal training
+is seeded and numerically reproducible but is not described as bit-for-bit
+deterministic. Each run atomically stores the best validation-loss weights,
+the complete configuration, the vocabulary, and every epoch's aggregate,
+per-kind, per-target, and objective-regret metrics.
 
 ### Evaluation
 
@@ -876,7 +986,7 @@ The six-deck validation fixtures use the independently published
       complete-shoe workers.
 - [x] Add reproducible integrity, coverage, context-length, uncertainty, and
       close-action QA for assembled datasets.
-- [ ] Benchmark 1, 2, 4, and 8 uncached complete-shoe workers before the
+- [x] Benchmark 1, 2, 4, and 8 uncached complete-shoe workers before the
       scaled generation run.
 - [ ] Generate and QA a 1,000-shoe corpus for 100/300/1,000-shoe learning
       curves.
@@ -888,11 +998,11 @@ The six-deck validation fixtures use the independently published
 - [ ] Design the ordered notebook curriculum.
 - [x] Build the blackjack vocabulary and token encoder.
 - [ ] Visualize token sequences, embeddings, and positional information.
-- [ ] Implement causal self-attention from scratch.
-- [ ] Implement multi-head attention, feed-forward layers, and transformer
+- [x] Implement causal self-attention from scratch.
+- [x] Implement multi-head attention, feed-forward layers, and transformer
       blocks.
-- [ ] Implement the causal language-model head.
-- [ ] Implement legal-token masking and typed decision decoding.
+- [x] Implement the causal language-model head.
+- [x] Implement legal-token masking and typed decision decoding.
 - [ ] Add shape checks, small examples, and visual explanations throughout.
 
 ### 7. Train the Model
@@ -900,21 +1010,22 @@ The six-deck validation fixtures use the independently published
 - [x] Build typed decision-only datasets, lazy batches, legal masks, and
       deterministic natural and capped inverse-square-root samplers.
 - [x] Verify the full pipeline by intentionally overfitting a tiny dataset.
-- [ ] Train the first natural-sampling baseline on the 100-shoe integration
+- [x] Train the first natural-sampling baseline on the 100-shoe integration
       dataset.
-- [ ] Compare natural sampling with capped inverse-square-root target
+- [x] Compare natural sampling with capped inverse-square-root target
       balancing while leaving validation and test untouched.
 - [ ] Plot nested 100-, 300-, and 1,000-shoe learning curves for accuracy and
       expected-value regret before choosing the final corpus size.
 - [x] Train only on decision-token targets.
-- [ ] Establish deterministic training and checkpointing.
+- [x] Establish seeded training and atomic best-model checkpointing, with exact
+      CPU replay and the measured Metal numerical tolerance documented.
 - [ ] Tune a model that trains comfortably with Apple Silicon acceleration.
-- [ ] Record losses and decision-specific metrics.
+- [x] Record losses and decision-specific metrics.
 
 ### 8. Evaluate the Model
 
-- [ ] Measure exact decision accuracy by decision type.
-- [ ] Measure expected-value regret for playing mistakes.
+- [x] Measure exact decision accuracy by decision type.
+- [x] Measure expected-value regret for playing mistakes.
 - [ ] Measure bet-fraction error and expected log-growth regret.
 - [ ] Evaluate complete bankroll trajectories on held-out shoes.
 - [ ] Compare against no-history, basic-strategy, and conventional counting
