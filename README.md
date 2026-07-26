@@ -782,6 +782,77 @@ silently treated as equally certain labels. The learning curves must therefore
 be read together with expected-value regret: disagreeing on a near-tie is not
 equivalent to missing a large-margin action.
 
+#### 5,000-Shoe Corpus
+
+The bounded scale decision produced schema-v4 dataset
+`blackjack-decisions-v4-5df03f72d05a47d0`. Eight complete-shoe workers
+generated and assembled all 5,000 shoes in 12,966.6 seconds (3 hours 36 minutes
+7 seconds), producing 511,145 decisions at 39.4 decisions per second end to
+end. The shared label cache accelerated repeated oracle states, especially
+while reproducing the first 1,000 physical shoes, but no output decision
+checkpoint was reused: every v6 row and shard was assembled during this run.
+
+The complete typed quality audit found no schema, provenance, duplicate-index,
+or shoe-split integrity errors. The split contains exactly 4,000 training, 500
+validation, and 500 test shoes:
+
+| Split | Decisions |
+| --- | ---: |
+| Training | 409,207 |
+| Validation | 50,925 |
+| Test | 51,013 |
+
+Every context still fits the 256-token model window. Maximum context lengths
+are 244 tokens for bets, 248 for insurance, and 250 for play. Exploration
+changed 54,956 of 273,810 play trajectories (20.1%) and 3,335 of 16,842
+insurance trajectories (19.8%), matching the configured 20% rate.
+
+The larger corpus provides distinct coverage for the labels that were sparse
+at 1,000 shoes:
+
+| Rare target | All rows | Training | Validation | Distinct shoes |
+| --- | ---: | ---: | ---: | ---: |
+| `<BET_HIGH>` | 3,086 | 2,518 | 281 | 627 |
+| `<INSURANCE>` | 1,756 | 1,407 | 167 | 1,056 |
+| `<BET_MEDIUM>` | 6,394 | 5,215 | 561 | 1,344 |
+| `<SPLIT>` | 6,103 | 4,880 | 615 | 3,381 |
+| `<SURRENDER>` | 9,185 | 7,345 | 916 | 4,092 |
+
+Monte Carlo precision remains stable at scale. Bet-label standard error has a
+median of 0.00114 wager units and a 95th percentile of 0.00117. Of 273,810
+play decisions, 9,750 have less than one percentage point between the best and
+second-best empirical actions, including 1,031 below one tenth of a percentage
+point. These rows remain in the corpus with their uncertainty and action
+values, so value-weighted evaluation can keep near-ties in perspective.
+
+The first 1,000 shuffled shoes—seeds, card order, and cut-card positions—match
+v5 exactly. Their split assignments do not. The generator creates exact
+80/10/10 split counts for the requested corpus size and then shuffles those
+assignments, so changing from 1,000 to 5,000 changes which shoe IDs belong to
+each split. I will not evaluate a v6-trained model on the old v5 validation
+file because some of those shoes can now be v6 training shoes.
+
+Instead, the paired scale experiment will train both models from v6 alone:
+
+1. A permutation-augmented model using only v6 training shoes with IDs below
+   1,000: 779 shoes, evaluated on the full fixed v6 validation split.
+2. A matched permutation-augmented model using all 4,000 v6 training shoes,
+   evaluated on that same validation split.
+
+Both runs will use the same initialization, optimizer, 15-epoch budget, and
+minimum-validation-loss selector. This costs one additional small training run
+but preserves the shoe-level boundary needed for an honest 1,000-to-5,000
+comparison. The full model must be assessed against the predeclared v6 Hi-Lo
+control, which reaches 95.93% play accuracy, 40.2% accuracy on
+composition-dependent deviations, and 0.00125 mean play regret on the new
+validation split. I will run a full balanced-permutation model only if the
+primary natural-permutation result still shows a useful rare-target tradeoff;
+I will not spend that compute automatically.
+
+```bash
+uv run python -m blackjack.dataset.quality data/generated/v6
+```
+
 ### Training
 
 #### Training Input Boundary
@@ -1281,8 +1352,10 @@ The six-deck validation fixtures use the independently published
       curves.
 - [x] Use the 100/300/1,000-shoe curves, Hi-Lo control, and permutation
       experiment to select 5,000 shoes as the next bounded scale point.
-- [ ] Generate and QA the 5,000-shoe corpus before choosing the final training
-      schedule; scale to 10,000 only if that result remains data-limited.
+- [x] Generate and QA the 5,000-shoe corpus before choosing the final training
+      schedule.
+- [ ] Scale to 10,000 only if the paired 1,000/5,000-shoe result remains
+      demonstrably data-limited.
 
 ### 6. Build the Notebook Course and Transformer
 
@@ -1317,6 +1390,11 @@ The six-deck validation fixtures use the independently published
       permutations of exposed-card history and current-hand card order at the
       same optimizer-update budget; keep validation/test chronological and
       measure prediction consistency across equivalent permutations.
+- [ ] Train matched permutation-augmented v6 models on the below-1,000 shoe-ID
+      prefix and all 5,000 shoes, selecting both against the same v6 validation
+      split.
+- [ ] Run the full balanced-permutation condition only if the natural-
+      permutation result leaves a useful rare-target tradeoff unresolved.
 - [ ] If the supervised learning curve remains label-limited, pretrain the
       custom transformer on cheap unlabeled visible blackjack sequences and
       measure how much oracle-labeled data fine-tuning then requires.
