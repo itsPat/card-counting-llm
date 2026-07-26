@@ -14,6 +14,7 @@ import torch
 from torch import Tensor
 
 from blackjack.dataset import DatasetSplit
+from blackjack.training.baseline import BasicStrategyBaseline
 from blackjack.training.data import (
     DecisionBatch,
     DecisionDataset,
@@ -135,6 +136,11 @@ def evaluate_model(
 ) -> DecisionMetrics:
     model.eval()
     accumulator = DecisionMetricAccumulator(dataset.vocabulary, references)
+    control = (
+        BasicStrategyBaseline(dataset)
+        if references is not None
+        else None
+    )
     loader = build_decision_loader(
         dataset,
         batch_size=batch_size,
@@ -145,7 +151,14 @@ def evaluate_model(
             batch = _move_batch(cpu_batch, device)
             logits = model(batch.input_ids, batch.attention_mask)
             loss = decision_cross_entropy(logits, batch)
-            accumulator.update(loss, logits, batch)
+            accumulator.update(
+                loss,
+                logits,
+                batch,
+                control_logits=(
+                    None if control is None else control.logits(batch)
+                ),
+            )
     return accumulator.finish()
 
 
@@ -156,6 +169,7 @@ def train_model(
     training_configuration: TrainingConfiguration,
     *,
     validation_references: EvaluationReferenceIndex | None = None,
+    epoch_checkpoint_directory: Path | None = None,
     progress: bool = True,
 ) -> tuple[BlackjackTransformer, TrainingResult]:
     """Train from one recorded seed and return every epoch's metrics."""
@@ -232,6 +246,12 @@ def train_model(
             validation=validation_metrics,
         )
         epochs.append(result)
+        if epoch_checkpoint_directory is not None:
+            _write_model_state(
+                model,
+                epoch_checkpoint_directory
+                / f"epoch-{result.epoch:02d}.pt",
+            )
         if validation_metrics.mean_loss < best_validation_loss:
             best_validation_loss = validation_metrics.mean_loss
             best_epoch = result.epoch
@@ -295,15 +315,23 @@ def write_training_artifacts(
     output_directory: Path,
 ) -> None:
     output_directory.mkdir(parents=True, exist_ok=True)
-    temporary_model = output_directory / ".model.pt.tmp"
-    torch.save(model.state_dict(), temporary_model)
-    temporary_model.replace(output_directory / "model.pt")
+    _write_model_state(model, output_directory / "model.pt")
     temporary_metrics = output_directory / ".metrics.json.tmp"
     temporary_metrics.write_text(
         json.dumps(_result_data(result), indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
     temporary_metrics.replace(output_directory / "metrics.json")
+
+
+def _write_model_state(
+    model: BlackjackTransformer,
+    path: Path,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp")
+    torch.save(model.state_dict(), temporary)
+    temporary.replace(path)
 
 
 def _argument_parser() -> argparse.ArgumentParser:
@@ -393,6 +421,9 @@ def main() -> None:
         model_configuration,
         training_configuration,
         validation_references=validation_references,
+        epoch_checkpoint_directory=(
+            arguments.output_directory / "checkpoints"
+        ),
     )
     write_training_artifacts(model, result, arguments.output_directory)
     print(

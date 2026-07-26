@@ -65,6 +65,7 @@ def test_tiny_training_is_deterministic_and_writes_artifacts(
         dataset,
         model_configuration,
         training_configuration,
+        epoch_checkpoint_directory=tmp_path / "checkpoints",
         progress=False,
     )
     _, second = train_model(
@@ -82,6 +83,8 @@ def test_tiny_training_is_deterministic_and_writes_artifacts(
     )
     assert first.epochs[-1].training.mean_loss < first.epochs[0].training.mean_loss
     assert first.epochs[-1].validation.by_target
+    assert (tmp_path / "checkpoints" / "epoch-01.pt").is_file()
+    assert (tmp_path / "checkpoints" / "epoch-02.pt").is_file()
 
     write_training_artifacts(first_model, first, tmp_path)
     assert (tmp_path / "model.pt").is_file()

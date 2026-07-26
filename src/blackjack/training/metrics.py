@@ -35,6 +35,7 @@ class DecisionMetrics:
     by_kind: tuple[CategoryAccuracy, ...]
     by_target: tuple[CategoryAccuracy, ...]
     regret_by_kind: tuple[ObjectiveRegret, ...] = ()
+    basic_strategy_comparison: StrategyComparison | None = None
 
     @property
     def accuracy(self) -> float:
@@ -49,6 +50,22 @@ class ObjectiveRegret:
     mean_regret: float
     percentile_95_regret: float
     maximum_regret: float
+
+
+@dataclass(frozen=True, slots=True)
+class StrategyComparison:
+    agreement_total: int
+    agreement_model_correct: int
+    deviation_total: int
+    deviation_model_correct: int
+
+    @property
+    def agreement_model_accuracy(self) -> float:
+        return self.agreement_model_correct / self.agreement_total
+
+    @property
+    def deviation_model_accuracy(self) -> float:
+        return self.deviation_model_correct / self.deviation_total
 
 
 @dataclass(slots=True)
@@ -81,16 +98,29 @@ class DecisionMetricAccumulator:
             tuple[DecisionKind, DecisionObjective],
             list[float],
         ] = {}
+        self._control_agreement = _MutableAccuracy()
+        self._control_deviation = _MutableAccuracy()
 
     def update(
         self,
         loss: Tensor,
         logits: Tensor,
         batch: DecisionBatch,
+        control_logits: Tensor | None = None,
     ) -> None:
         selected = legal_decision_logits(logits.detach(), batch)
         predictions = selected.argmax(dim=1).to("cpu")
         targets = batch.target_ids.to("cpu")
+        control_predictions = (
+            None
+            if control_logits is None
+            else legal_decision_logits(
+                control_logits.detach(),
+                batch,
+            )
+            .argmax(dim=1)
+            .to("cpu")
+        )
         self._loss_sum += float(loss.detach().item()) * batch.batch_size
         for row, kind in enumerate(batch.kinds):
             target = int(targets[row].item())
@@ -98,6 +128,19 @@ class DecisionMetricAccumulator:
             self._overall.add(correct)
             self._by_kind[kind].add(correct)
             self._by_target.setdefault(target, _MutableAccuracy()).add(correct)
+            if (
+                control_predictions is not None
+                and kind is DecisionKind.PLAY
+            ):
+                control_agrees = (
+                    int(control_predictions[row].item()) == target
+                )
+                destination = (
+                    self._control_agreement
+                    if control_agrees
+                    else self._control_deviation
+                )
+                destination.add(correct)
             if self._references is not None:
                 reference = self._references.get(
                     int(batch.shoe_ids[row].item()),
@@ -140,6 +183,20 @@ class DecisionMetricAccumulator:
                 _objective_regret(kind, objective, regrets)
                 for (kind, objective), regrets in self._regrets.items()
             ),
+            basic_strategy_comparison=self._strategy_comparison(),
+        )
+
+    def _strategy_comparison(self) -> StrategyComparison | None:
+        if (
+            self._control_agreement.total == 0
+            or self._control_deviation.total == 0
+        ):
+            return None
+        return StrategyComparison(
+            agreement_total=self._control_agreement.total,
+            agreement_model_correct=self._control_agreement.correct,
+            deviation_total=self._control_deviation.total,
+            deviation_model_correct=self._control_deviation.correct,
         )
 
 
@@ -187,7 +244,7 @@ def _regret_data(
 def decision_metrics_data(metrics: DecisionMetrics) -> dict[str, object]:
     """Convert typed metrics to a transparent JSON-compatible object."""
 
-    return {
+    result: dict[str, object] = {
         "mean_loss": metrics.mean_loss,
         "correct": metrics.correct,
         "total": metrics.total,
@@ -198,3 +255,22 @@ def decision_metrics_data(metrics: DecisionMetrics) -> dict[str, object]:
             _regret_data(metric) for metric in metrics.regret_by_kind
         ],
     }
+    comparison = metrics.basic_strategy_comparison
+    if comparison is not None:
+        result["basic_strategy_comparison"] = {
+            "agreement_total": comparison.agreement_total,
+            "agreement_model_correct": (
+                comparison.agreement_model_correct
+            ),
+            "agreement_model_accuracy": (
+                comparison.agreement_model_accuracy
+            ),
+            "deviation_total": comparison.deviation_total,
+            "deviation_model_correct": (
+                comparison.deviation_model_correct
+            ),
+            "deviation_model_accuracy": (
+                comparison.deviation_model_accuracy
+            ),
+        }
+    return result

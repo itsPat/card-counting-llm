@@ -918,8 +918,11 @@ the seeded natural run reproduced every rounded metric, while corresponding
 weights differed by at most `4.77e-7`. CPU tests are bit-exact; Metal training
 is seeded and numerically reproducible but is not described as bit-for-bit
 deterministic. Each run atomically stores the best validation-loss weights,
-the complete configuration, the vocabulary, and every epoch's aggregate,
-per-kind, per-target, and objective-regret metrics.
+every epoch's weights, the complete configuration, the vocabulary, and every
+epoch's aggregate, per-kind, per-target, objective-regret, and basic-strategy
+agreement/deviation metrics. Retaining each epoch avoids assuming that minimum
+cross-entropy, minimum bankroll regret, and maximum composition-deviation
+accuracy select the same checkpoint.
 
 ### Evaluation
 
