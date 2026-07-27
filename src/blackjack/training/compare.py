@@ -23,6 +23,7 @@ from blackjack.training.model import (
     PositionScheme,
     TransformerConfiguration,
 )
+from blackjack.training.vocabulary import BlackjackVocabulary
 
 
 class DecisionModel(Protocol):
@@ -165,14 +166,19 @@ def _model_configuration(artifact_directory: Path) -> TransformerConfiguration:
 
 def load_model_artifact(
     artifact_directory: Path,
-    dataset: DecisionDataset,
+    source: DecisionDataset | BlackjackVocabulary,
 ) -> BlackjackTransformer:
+    vocabulary = (
+        source.vocabulary
+        if isinstance(source, DecisionDataset)
+        else source
+    )
     configuration = _model_configuration(artifact_directory)
-    if configuration.vocabulary_size != len(dataset.vocabulary):
+    if configuration.vocabulary_size != len(vocabulary):
         raise ValueError("artifact and dataset vocabulary sizes differ")
     model = BlackjackTransformer(
         configuration,
-        padding_index=dataset.vocabulary.pad_id,
+        padding_index=vocabulary.pad_id,
     )
     loaded: object = torch.load(
         artifact_directory / "model.pt",

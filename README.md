@@ -13,6 +13,10 @@ explainable experiments. The goal is not merely to produce a working model. I
 want to understand why it works, where it fails, and what it has learned
 internally.
 
+The completed v6 milestone, evidence, comparisons, limitations, and compute
+accounting are collected in
+[`reports/PROJECT_REPORT.md`](reports/PROJECT_REPORT.md).
+
 ## Why Blackjack?
 
 Blackjack is fun, but it also makes an unusually good learning environment.
@@ -1243,6 +1247,123 @@ The present claim is limited to the untouched v6 validation distribution and
 the documented Monte Carlo labels; complete bankroll trajectories and the
 sealed test split remain future evaluation stages.
 
+#### Predeclared Bankroll Comparison
+
+Decision accuracy is not the final casino objective. I therefore evaluate the
+retained full transformer and the predeclared H17 Hi-Lo control in fresh
+deterministic simulations that are disjoint from dataset generation. Simulation
+seed `20260801` creates 25,000 six-deck shoes, which should produce more than
+one million completed rounds for each policy.
+
+Both policies receive independent cursors over the same shuffled shoe orders
+and cut-card positions. This common-random-number design reduces comparison
+variance without forcing their trajectories to remain identical: after one
+policy hits while the other stands, later cards can land in different hands.
+Each policy sees only its own public card history and makes its own bet,
+insurance, and play decisions. Every round is settled by the exact engine,
+including blackjack, surrender, insurance, doubles, and correlated split-hand
+returns. The chosen bet token stakes its documented fraction of current
+bankroll.
+
+Before inspecting the 25,000-shoe result, I define the primary comparison as
+the mean paired difference in log-bankroll growth per shoe:
+
+- the transformer outperforms Hi-Lo only if the entire 95% confidence interval
+  is above zero;
+- the transformer underperforms only if the entire interval is below zero;
+- otherwise the result is statistically inconclusive at this sample size.
+
+The bankroll chart is an intuitive realized path, not the statistical test.
+Log growth is primary because bet sizes compound, while per-round profit,
+penetration, true count, and public remaining-card composition are retained as
+diagnostic breakdowns. This simulation does not open the sealed v6 test split.
+
+#### Measured Five-Million-Round Result
+
+The scale evaluation extends the initial 25,000-shoe report with 40 resumable
+atomic shards. Together they contain 116,000 fresh shoes and:
+
+- 5,015,984 transformer rounds;
+- 5,025,662 Hi-Lo rounds;
+- 10,041,646 combined policy-rounds.
+
+The policies can finish different numbers of rounds because a hit, stand,
+double, or split changes how quickly its independent cursor consumes the same
+shuffled shoe. The transformer-minus-Hi-Lo paired log-growth advantage is
+`0.00016734` per shoe, with a 95% confidence interval of
+`[0.00006587, 0.00026880]`. The complete interval is above zero, so the
+transformer satisfies the predeclared criterion for outperforming this Hi-Lo
+control.
+
+In conventional card-counting terms, I define one minimum-bet unit as
+`<BET_MIN>`, or 0.1% of bankroll. The transformer earns an estimated `0.01737`
+minimum-bet units per round, or `1.737` units per 100 rounds, with a
+shoe-clustered 95% confidence interval of `[1.447, 2.027]`. Hi-Lo earns
+`0.01258` units per round, or `1.258` units per 100 rounds, with an interval of
+`[0.993, 1.524]`. The descriptive gap is `0.479` minimum-bet units per 100
+rounds, about 38% more EV for the transformer under this bet spread.
+
+EV per hour depends on game speed. At 60, 100, and 150 rounds per hour, the
+transformer's estimates are `1.042`, `1.737`, and `2.606` minimum-bet
+units/hour; Hi-Lo's are `0.755`, `1.258`, and `1.887`. With a $25 minimum unit,
+the 100-round/hour example is about $43.43/hour versus $31.46/hour. That dollar
+example implies the project's 1-to-13 bet spread runs from $25 to $325 and
+ignores travel, tips, errors, table limits, heat, and other practical costs.
+
+I retain paired log growth as the predeclared inferential test because the bet
+tokens were selected from half-Kelly fractions and bankroll compounds. EV per
+100 rounds is the clearer headline and uses the already-retained arithmetic
+round-return estimate; it is not a replacement metric chosen to reverse an
+unfavorable result.
+
+The transformer averages `0.001191` log growth per 100 rounds, compared with
+Hi-Lo's `0.000796`. Its advantage is strongest at 40%–80% penetration and when
+at least 40% of publicly remaining cards are high cards. It remains slightly
+worse in several narrower regions, including 20%–40% penetration, true counts
+-2 to -1 and 2 to 3, and a 37%–38.5% remaining high-card share. Those are
+diagnostic targets rather than reasons to relabel or retrain after seeing the
+result.
+
+Mean flat one-unit profit remains negative for both policies: `-0.003677` for
+the transformer and `-0.004621` for Hi-Lo. Positive compounded growth comes
+from staking smaller fractions in unfavorable states and larger fractions when
+composition is favorable. The enormous realized bankroll endpoints therefore
+illustrate compounding over five million rounds; they do not model table
+limits, liquidity, bet camouflage, or casino countermeasures.
+
+One decision in the final shard produced 257 tokens, exceeding the retained
+model's 256-token window by one. This boundary was not present in the generated
+training corpus, whose maximum observed context was 250. I corrected the live
+methodology transparently: the evaluator removes only the minimum oldest
+visible-history card tokens needed to fit, while preserving the history marker,
+complete current hand, dealer upcard, structure markers, and query. It records
+every truncation. In the resumed shard this happened once among 233,436
+transformer decisions and dropped exactly one token. The preceding reports ran
+with fail-on-overflow behavior, so their successful completion establishes that
+they contained no overlength input. No round was discarded and no fallback
+policy was used.
+
+This result is specific to the documented control: six-deck H17 basic strategy
+plus the implemented Illustrious 18/Fab 4 deviations, insurance at true count
++3, and the selected bet ramp. It does not establish superiority over every
+possible Hi-Lo implementation. The compact report and chart live in
+`reports/blackjack-v6-bankroll/`; notebook 03 recreates the analysis without
+rerunning the ten-million-policy-round simulation.
+
+Stanford CS230's
+[2018 Deep Q-Learning project](https://cs230.stanford.edu/files_winter_2018/projects/6940282.pdf)
+and
+[2021 PPO project](https://cs230.stanford.edu/projects_fall_2021/reports/103066753.pdf)
+are useful precedents, but their reported returns are not directly comparable.
+In particular, the 2021 environment primarily used one deck, omitted splits,
+used early surrender and a dealer-hit-17 rule, and evaluated 50,000 episodes.
+Its PPO agent encoded dealt-rank counts and reported positive average reward
+against its own rule-based and Hi-Lo controls. This project instead uses a
+six-deck American-hole-card H17 game with splits, late surrender, insurance,
+exact settlement, visible card-token history, and more than five million rounds
+per policy. I compare experimental design and qualitative findings, not the
+incompatible reward numbers.
+
 ```bash
 uv run python -m blackjack.training.run \
   data/generated/v6 \
@@ -1311,9 +1432,11 @@ uv run pyright
 uv run ruff check .
 ```
 
-Open `notebooks/01_blackjack_engine.ipynb` for the visual engine walkthrough or
+Open `notebooks/01_blackjack_engine.ipynb` for the visual engine walkthrough,
 `notebooks/02_bet_token_pilot.ipynb` for the reproducible bet-vocabulary
-analysis. Select the same `.venv/bin/python` environment for either notebook.
+analysis, or `notebooks/03_bankroll_evaluation.ipynb` for the transformer versus
+Hi-Lo scale result. Select the same `.venv/bin/python` environment for any
+notebook.
 
 ### Published v6 Artifacts
 
@@ -1496,12 +1619,19 @@ The six-deck validation fixtures use the independently published
 - [x] Replace the provisional full-Kelly-oriented bet regret metric with
       half-Kelly-aligned bet-fraction error and absolute log-growth change;
       recompute every reported bet metric from retained checkpoints.
-- [ ] Evaluate complete bankroll trajectories on held-out shoes.
+- [x] Evaluate complete bankroll trajectories over 116,000 fresh shoes and
+      more than five million completed rounds per policy.
 - [x] Compare against no-history and basic-strategy controls plus a
       predeclared six-deck H17 Hi-Lo system with public running/true count, a
       tokenized bet ramp, insurance threshold, and documented play indices.
-- [ ] Break results down by shoe penetration and remaining composition.
-- [ ] Verify that evaluation shoes and states were not seen during training.
+- [x] Break results down by shoe penetration, true count, and public remaining
+      composition.
+- [x] Verify evaluation shoes are freshly generated from a separate seed and
+      shoe-ID range rather than reusing training or validation replays.
+- [x] Compare the six-deck transformer and Hi-Lo results with Stanford
+      CS230's 2018 Deep Q-Learning and 2021 PPO blackjack projects, separating
+      differences in rules, deck count, state representation, action space,
+      reward, training method, and evaluation sample before comparing returns.
 
 ### 9. Inspect What the Model Learned
 
@@ -1510,7 +1640,11 @@ The six-deck validation fixtures use the independently published
 - [ ] Remove or shuffle history and measure the effect on predictions.
 - [ ] Make controlled card substitutions and observe decision changes.
 - [ ] Compare models with different context lengths and capacities.
-- [ ] Identify failure cases and design follow-up experiments.
+- [x] Identify bankroll-evaluation failure regions by penetration, true count,
+      and public high-card share before designing follow-up experiments.
+- [ ] Evaluate a longer-context model or a sufficient-statistic composition
+      representation so rare late-shoe decisions never require history
+      truncation.
 
 ## What I Want to Try Next
 
