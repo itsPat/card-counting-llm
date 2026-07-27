@@ -1166,14 +1166,11 @@ model did so 97.91% of the time. The unaugmented model's accuracy fell from
 95.80%. This supports the intended invariance, although one training seed is
 not enough to treat the exact improvement as a general result.
 
-The evidence now justifies a bounded 5,000-shoe corpus rather than jumping
-directly to 10,000. Both natural and balanced learning curves improve strongly
-from 300 to 1,000 shoes; cheap valid augmentation reduces regret but does not
-remove the need for independent compositions; and the learned model still has
-higher play regret than Hi-Lo. Five thousand shoes should test whether that gap
-is label-limited while providing roughly five times the rare-target coverage.
-I will keep the test split sealed and run corpus QA before choosing the final
-training schedule.
+This evidence justified the bounded 5,000-shoe corpus described above rather
+than a blind jump to 10,000. Both natural and balanced learning curves improved
+strongly from 300 to 1,000 shoes, while cheap valid augmentation reduced regret
+without removing the need for independent compositions. The paired v6 result
+below measures what the additional independent data changed.
 
 ```bash
 uv run python -m blackjack.training.run \
@@ -1189,6 +1186,77 @@ uv run python -m blackjack.training.invariance \
   artifacts/training/v5-natural-1000 \
   artifacts/training/v5-natural-1000-permuted \
   --permutations 4 \
+  --device mps
+```
+
+#### Paired 1,000/5,000-Shoe v6 Result
+
+I trained the predeclared pair entirely within v6 so both checkpoints use the
+same 50,925-decision validation split. The prefix model uses the 779 training
+shoes whose IDs are below 1,000; the full model uses all 4,000 training shoes.
+Both use natural sampling, deterministic card-order augmentation, the same
+831,488-parameter architecture, initialization, optimizer, batch size,
+15-epoch budget, and minimum-validation-loss selector. The test split remains
+unopened for model evaluation.
+
+| Policy/model | Training shoes | Best epoch | Overall accuracy | Bet accuracy | Insurance accuracy | Play accuracy | Composition deviations | Mean play regret | Mean half-Kelly fraction error |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| H17 Hi-Lo | — | — | 95.04% | 94.19% | 91.72% | 95.93% | 40.2% | 0.00125 wagers | 0.1083 pp |
+| Permuted prefix | 779 | 15 | 96.15% | 96.65% | 95.21% | 95.81% | 60.8% | 0.00191 wagers | 0.1019 pp |
+| Permuted full | 4,000 | 15 | **97.56%** | **97.61%** | **97.52%** | **97.52%** | **70.2%** | **0.00047 wagers** | **0.0996 pp** |
+
+Scaling from 779 to 4,000 training shoes adds 1.41 percentage points overall
+and 1.71 points on play. More importantly, it lowers mean play regret by 75%.
+The full transformer also exceeds Hi-Lo play accuracy by 1.59 points and has
+62% lower play regret. Unlike the earlier 1,000-shoe result, the model is not
+merely discovering more oracle deviations while giving their value back
+through ordinary mistakes: it reaches 98.99% accuracy where basic strategy
+agrees with the oracle and 70.18% where the composition-dependent oracle
+departs from it.
+
+Rare targets improve without target-balanced resampling:
+
+| Validation target | Prefix accuracy | Full accuracy |
+| --- | ---: | ---: |
+| `<BET_HIGH>` | 66.2% | 97.2% |
+| `<INSURANCE>` | 56.9% | 83.2% |
+| `<SURRENDER>` | 83.7% | 91.9% |
+| `<SPLIT>` | 96.4% | 98.4% |
+| `<BET_MEDIUM>` | 80.4% | 81.8% |
+
+This removes the reason to spend another several hours on a full balanced-
+permutation run now. Natural sampling with genuinely distinct rows improves
+both common decisions and the rare classes; balancing is reserved for a later
+diagnosed failure rather than run automatically.
+
+The four-permutation audit also improves with scale. Across 200,305 comparisons
+where card order actually changed the input, the prefix model preserves its
+prediction 98.16% of the time and the full model does so 99.11% of the time.
+The full model's chronological accuracy is 97.56% and its permuted-input
+accuracy is 97.57%, so the measured invariance does not hide an accuracy loss.
+
+Both selectors choose epoch 15, the edge of the predeclared budget. I retain
+those checkpoints rather than extending training after seeing validation.
+This suggests additional optimization may still help, but a longer run or
+resumable optimizer-state design must be declared as a separate experiment.
+The present claim is limited to the untouched v6 validation distribution and
+the documented Monte Carlo labels; complete bankroll trajectories and the
+sealed test split remain future evaluation stages.
+
+```bash
+uv run python -m blackjack.training.run \
+  data/generated/v6 \
+  artifacts/training/v6-natural-1000-permuted \
+  --training-shoe-prefix 1000 \
+  --sampling natural \
+  --card-order-augmentation permute \
+  --device mps
+
+uv run python -m blackjack.training.run \
+  data/generated/v6 \
+  artifacts/training/v6-natural-5000-permuted \
+  --sampling natural \
+  --card-order-augmentation permute \
   --device mps
 ```
 
@@ -1354,8 +1422,8 @@ The six-deck validation fixtures use the independently published
       experiment to select 5,000 shoes as the next bounded scale point.
 - [x] Generate and QA the 5,000-shoe corpus before choosing the final training
       schedule.
-- [ ] Scale to 10,000 only if the paired 1,000/5,000-shoe result remains
-      demonstrably data-limited.
+- [x] Hold at 5,000 shoes while value-aware and bankroll evaluation determine
+      whether any remaining failure is genuinely data-limited.
 
 ### 6. Build the Notebook Course and Transformer
 
@@ -1390,11 +1458,12 @@ The six-deck validation fixtures use the independently published
       permutations of exposed-card history and current-hand card order at the
       same optimizer-update budget; keep validation/test chronological and
       measure prediction consistency across equivalent permutations.
-- [ ] Train matched permutation-augmented v6 models on the below-1,000 shoe-ID
+- [x] Train matched permutation-augmented v6 models on the below-1,000 shoe-ID
       prefix and all 5,000 shoes, selecting both against the same v6 validation
       split.
-- [ ] Run the full balanced-permutation condition only if the natural-
-      permutation result leaves a useful rare-target tradeoff unresolved.
+- [x] Do not run the full balanced-permutation condition yet: the natural-
+      permutation model improves both common decisions and rare targets, so no
+      useful balancing tradeoff remains unresolved.
 - [ ] If the supervised learning curve remains label-limited, pretrain the
       custom transformer on cheap unlabeled visible blackjack sequences and
       measure how much oracle-labeled data fine-tuning then requires.
