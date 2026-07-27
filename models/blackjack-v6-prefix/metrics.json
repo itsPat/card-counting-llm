@@ -1,0 +1,3484 @@
+{
+  "best_epoch": 15,
+  "device": "mps",
+  "epochs": [
+    {
+      "elapsed_seconds": 461.1425427499926,
+      "epoch": 1,
+      "training": {
+        "accuracy": 0.8251357233994646,
+        "by_kind": [
+          {
+            "accuracy": 0.8927763272410792,
+            "category": "bet",
+            "correct": 30774,
+            "total": 34470
+          },
+          {
+            "accuracy": 0.8987388724035609,
+            "category": "insurance",
+            "correct": 2423,
+            "total": 2696
+          },
+          {
+            "accuracy": 0.7659902749205162,
+            "category": "play",
+            "correct": 32766,
+            "total": 42776
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9806398687448729,
+            "category": "<BET_MIN>",
+            "correct": 29885,
+            "total": 30475
+          },
+          {
+            "accuracy": 0.28427719821162445,
+            "category": "<BET_LOW>",
+            "correct": 763,
+            "total": 2684
+          },
+          {
+            "accuracy": 0.09797297297297297,
+            "category": "<BET_MEDIUM>",
+            "correct": 87,
+            "total": 888
+          },
+          {
+            "accuracy": 0.09219858156028368,
+            "category": "<BET_HIGH>",
+            "correct": 39,
+            "total": 423
+          },
+          {
+            "accuracy": 0.7418875549744444,
+            "category": "<HIT>",
+            "correct": 12483,
+            "total": 16826
+          },
+          {
+            "accuracy": 0.8619778686073173,
+            "category": "<STAND>",
+            "correct": 17293,
+            "total": 20062
+          },
+          {
+            "accuracy": 0.5028089887640449,
+            "category": "<DOUBLE>",
+            "correct": 1790,
+            "total": 3560
+          },
+          {
+            "accuracy": 0.697950377562028,
+            "category": "<SPLIT>",
+            "correct": 647,
+            "total": 927
+          },
+          {
+            "accuracy": 0.3947180585296217,
+            "category": "<SURRENDER>",
+            "correct": 553,
+            "total": 1401
+          },
+          {
+            "accuracy": 0.14181818181818182,
+            "category": "<INSURANCE>",
+            "correct": 39,
+            "total": 275
+          },
+          {
+            "accuracy": 0.9847170590665014,
+            "category": "<NO_INSURANCE>",
+            "correct": 2384,
+            "total": 2421
+          }
+        ],
+        "correct": 65963,
+        "mean_loss": 0.4150688786860484,
+        "regret_by_kind": [],
+        "total": 79942
+      },
+      "validation": {
+        "accuracy": 0.8859891998036328,
+        "basic_strategy_comparison": {
+          "agreement_model_accuracy": 0.9025682679662721,
+          "agreement_model_correct": 23335,
+          "agreement_total": 25854,
+          "deviation_model_accuracy": 0.353405017921147,
+          "deviation_model_correct": 493,
+          "deviation_total": 1395
+        },
+        "bet_policy": {
+          "maximum_absolute_fraction_error": 0.029083593741509914,
+          "maximum_absolute_log_growth_change": 0.0017680091865814346,
+          "mean_absolute_fraction_error": 0.0013008811716332955,
+          "mean_absolute_log_growth_change": 1.5389316534878652e-05,
+          "percentile_95_absolute_fraction_error": 0.003731476762702424,
+          "percentile_95_absolute_log_growth_change": 4.5471558084726034e-05,
+          "total": 21985
+        },
+        "by_kind": [
+          {
+            "accuracy": 0.8988401182624517,
+            "category": "bet",
+            "correct": 19761,
+            "total": 21985
+          },
+          {
+            "accuracy": 0.9047900650502662,
+            "category": "insurance",
+            "correct": 1530,
+            "total": 1691
+          },
+          {
+            "accuracy": 0.874454108407648,
+            "category": "play",
+            "correct": 23828,
+            "total": 27249
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9983482165900996,
+            "category": "<BET_MIN>",
+            "correct": 19341,
+            "total": 19373
+          },
+          {
+            "accuracy": 0.1977401129943503,
+            "category": "<BET_LOW>",
+            "correct": 350,
+            "total": 1770
+          },
+          {
+            "accuracy": 0.026737967914438502,
+            "category": "<BET_MEDIUM>",
+            "correct": 15,
+            "total": 561
+          },
+          {
+            "accuracy": 0.19572953736654805,
+            "category": "<BET_HIGH>",
+            "correct": 55,
+            "total": 281
+          },
+          {
+            "accuracy": 0.7538159003652027,
+            "category": "<HIT>",
+            "correct": 8050,
+            "total": 10679
+          },
+          {
+            "accuracy": 0.9577132057642334,
+            "category": "<STAND>",
+            "correct": 12162,
+            "total": 12699
+          },
+          {
+            "accuracy": 0.9517094017094017,
+            "category": "<DOUBLE>",
+            "correct": 2227,
+            "total": 2340
+          },
+          {
+            "accuracy": 0.8585365853658536,
+            "category": "<SPLIT>",
+            "correct": 528,
+            "total": 615
+          },
+          {
+            "accuracy": 0.9399563318777293,
+            "category": "<SURRENDER>",
+            "correct": 861,
+            "total": 916
+          },
+          {
+            "accuracy": 0.04790419161676647,
+            "category": "<INSURANCE>",
+            "correct": 8,
+            "total": 167
+          },
+          {
+            "accuracy": 0.9986876640419947,
+            "category": "<NO_INSURANCE>",
+            "correct": 1522,
+            "total": 1524
+          }
+        ],
+        "correct": 45119,
+        "mean_loss": 0.2638407890593005,
+        "regret_by_kind": [
+          {
+            "category": "play",
+            "maximum_regret": 1.618875,
+            "mean_regret": 0.012389431465374877,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.057291999999999954,
+            "total": 27249
+          },
+          {
+            "category": "insurance",
+            "maximum_regret": 0.14516129032258066,
+            "mean_regret": 0.0023026685449275574,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.015151515151515152,
+            "total": 1691
+          }
+        ],
+        "total": 50925
+      }
+    },
+    {
+      "elapsed_seconds": 461.42440554097993,
+      "epoch": 2,
+      "training": {
+        "accuracy": 0.897951014485502,
+        "by_kind": [
+          {
+            "accuracy": 0.9159559036843632,
+            "category": "bet",
+            "correct": 31573,
+            "total": 34470
+          },
+          {
+            "accuracy": 0.9169139465875371,
+            "category": "insurance",
+            "correct": 2472,
+            "total": 2696
+          },
+          {
+            "accuracy": 0.882247054423041,
+            "category": "play",
+            "correct": 37739,
+            "total": 42776
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9769975389663659,
+            "category": "<BET_MIN>",
+            "correct": 29774,
+            "total": 30475
+          },
+          {
+            "accuracy": 0.5122950819672131,
+            "category": "<BET_LOW>",
+            "correct": 1375,
+            "total": 2684
+          },
+          {
+            "accuracy": 0.27702702702702703,
+            "category": "<BET_MEDIUM>",
+            "correct": 246,
+            "total": 888
+          },
+          {
+            "accuracy": 0.42080378250591016,
+            "category": "<BET_HIGH>",
+            "correct": 178,
+            "total": 423
+          },
+          {
+            "accuracy": 0.8586116724117437,
+            "category": "<HIT>",
+            "correct": 14447,
+            "total": 16826
+          },
+          {
+            "accuracy": 0.9285215830924135,
+            "category": "<STAND>",
+            "correct": 18628,
+            "total": 20062
+          },
+          {
+            "accuracy": 0.823876404494382,
+            "category": "<DOUBLE>",
+            "correct": 2933,
+            "total": 3560
+          },
+          {
+            "accuracy": 0.8716289104638619,
+            "category": "<SPLIT>",
+            "correct": 808,
+            "total": 927
+          },
+          {
+            "accuracy": 0.6588151320485368,
+            "category": "<SURRENDER>",
+            "correct": 923,
+            "total": 1401
+          },
+          {
+            "accuracy": 0.4036363636363636,
+            "category": "<INSURANCE>",
+            "correct": 111,
+            "total": 275
+          },
+          {
+            "accuracy": 0.9752168525402726,
+            "category": "<NO_INSURANCE>",
+            "correct": 2361,
+            "total": 2421
+          }
+        ],
+        "correct": 71784,
+        "mean_loss": 0.24113643143321103,
+        "regret_by_kind": [],
+        "total": 79942
+      },
+      "validation": {
+        "accuracy": 0.9210996563573883,
+        "basic_strategy_comparison": {
+          "agreement_model_accuracy": 0.9331244681674016,
+          "agreement_model_correct": 24125,
+          "agreement_total": 25854,
+          "deviation_model_accuracy": 0.4960573476702509,
+          "deviation_model_correct": 692,
+          "deviation_total": 1395
+        },
+        "bet_policy": {
+          "maximum_absolute_fraction_error": 0.029083593741509914,
+          "maximum_absolute_log_growth_change": 0.0017680091865814346,
+          "mean_absolute_fraction_error": 0.0011194239479890243,
+          "mean_absolute_log_growth_change": 1.2285975293882911e-05,
+          "percentile_95_absolute_fraction_error": 0.002528783664235372,
+          "percentile_95_absolute_log_growth_change": 3.525958315874116e-05,
+          "total": 21985
+        },
+        "by_kind": [
+          {
+            "accuracy": 0.9327723447805322,
+            "category": "bet",
+            "correct": 20507,
+            "total": 21985
+          },
+          {
+            "accuracy": 0.9361324659964518,
+            "category": "insurance",
+            "correct": 1583,
+            "total": 1691
+          },
+          {
+            "accuracy": 0.9107490183125986,
+            "category": "play",
+            "correct": 24817,
+            "total": 27249
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9930831569710422,
+            "category": "<BET_MIN>",
+            "correct": 19239,
+            "total": 19373
+          },
+          {
+            "accuracy": 0.5112994350282486,
+            "category": "<BET_LOW>",
+            "correct": 905,
+            "total": 1770
+          },
+          {
+            "accuracy": 0.2727272727272727,
+            "category": "<BET_MEDIUM>",
+            "correct": 153,
+            "total": 561
+          },
+          {
+            "accuracy": 0.7473309608540926,
+            "category": "<BET_HIGH>",
+            "correct": 210,
+            "total": 281
+          },
+          {
+            "accuracy": 0.8941848487686113,
+            "category": "<HIT>",
+            "correct": 9549,
+            "total": 10679
+          },
+          {
+            "accuracy": 0.9568469958264431,
+            "category": "<STAND>",
+            "correct": 12151,
+            "total": 12699
+          },
+          {
+            "accuracy": 0.8098290598290598,
+            "category": "<DOUBLE>",
+            "correct": 1895,
+            "total": 2340
+          },
+          {
+            "accuracy": 0.865040650406504,
+            "category": "<SPLIT>",
+            "correct": 532,
+            "total": 615
+          },
+          {
+            "accuracy": 0.7532751091703057,
+            "category": "<SURRENDER>",
+            "correct": 690,
+            "total": 916
+          },
+          {
+            "accuracy": 0.6167664670658682,
+            "category": "<INSURANCE>",
+            "correct": 103,
+            "total": 167
+          },
+          {
+            "accuracy": 0.9711286089238845,
+            "category": "<NO_INSURANCE>",
+            "correct": 1480,
+            "total": 1524
+          }
+        ],
+        "correct": 46907,
+        "mean_loss": 0.18581538354847205,
+        "regret_by_kind": [
+          {
+            "category": "play",
+            "maximum_regret": 1.6903169999999998,
+            "mean_regret": 0.008590981393812617,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.03162899999999996,
+            "total": 27249
+          },
+          {
+            "category": "insurance",
+            "maximum_regret": 0.056,
+            "mean_regret": 0.0009190478896994076,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.004424778761061947,
+            "total": 1691
+          }
+        ],
+        "total": 50925
+      }
+    },
+    {
+      "elapsed_seconds": 451.7913727090345,
+      "epoch": 3,
+      "training": {
+        "accuracy": 0.91102299166896,
+        "by_kind": [
+          {
+            "accuracy": 0.9253553814911517,
+            "category": "bet",
+            "correct": 31897,
+            "total": 34470
+          },
+          {
+            "accuracy": 0.9158011869436202,
+            "category": "insurance",
+            "correct": 2469,
+            "total": 2696
+          },
+          {
+            "accuracy": 0.8991724331400786,
+            "category": "play",
+            "correct": 38463,
+            "total": 42776
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9779163248564398,
+            "category": "<BET_MIN>",
+            "correct": 29802,
+            "total": 30475
+          },
+          {
+            "accuracy": 0.5670640834575261,
+            "category": "<BET_LOW>",
+            "correct": 1522,
+            "total": 2684
+          },
+          {
+            "accuracy": 0.3795045045045045,
+            "category": "<BET_MEDIUM>",
+            "correct": 337,
+            "total": 888
+          },
+          {
+            "accuracy": 0.557919621749409,
+            "category": "<BET_HIGH>",
+            "correct": 236,
+            "total": 423
+          },
+          {
+            "accuracy": 0.8797099726613574,
+            "category": "<HIT>",
+            "correct": 14802,
+            "total": 16826
+          },
+          {
+            "accuracy": 0.9354002591964908,
+            "category": "<STAND>",
+            "correct": 18766,
+            "total": 20062
+          },
+          {
+            "accuracy": 0.8665730337078652,
+            "category": "<DOUBLE>",
+            "correct": 3085,
+            "total": 3560
+          },
+          {
+            "accuracy": 0.8888888888888888,
+            "category": "<SPLIT>",
+            "correct": 824,
+            "total": 927
+          },
+          {
+            "accuracy": 0.7037830121341898,
+            "category": "<SURRENDER>",
+            "correct": 986,
+            "total": 1401
+          },
+          {
+            "accuracy": 0.44363636363636366,
+            "category": "<INSURANCE>",
+            "correct": 122,
+            "total": 275
+          },
+          {
+            "accuracy": 0.9694341181330028,
+            "category": "<NO_INSURANCE>",
+            "correct": 2347,
+            "total": 2421
+          }
+        ],
+        "correct": 72829,
+        "mean_loss": 0.2084396884319437,
+        "regret_by_kind": [],
+        "total": 79942
+      },
+      "validation": {
+        "accuracy": 0.9439175257731959,
+        "basic_strategy_comparison": {
+          "agreement_model_accuracy": 0.9532760888063743,
+          "agreement_model_correct": 24646,
+          "agreement_total": 25854,
+          "deviation_model_accuracy": 0.4939068100358423,
+          "deviation_model_correct": 689,
+          "deviation_total": 1395
+        },
+        "bet_policy": {
+          "maximum_absolute_fraction_error": 0.029083593741509914,
+          "maximum_absolute_log_growth_change": 0.0017680091865814346,
+          "mean_absolute_fraction_error": 0.0010270785609029927,
+          "mean_absolute_log_growth_change": 1.1217130097897771e-05,
+          "percentile_95_absolute_fraction_error": 0.001798033790349758,
+          "percentile_95_absolute_log_growth_change": 3.236664247074992e-05,
+          "total": 21985
+        },
+        "by_kind": [
+          {
+            "accuracy": 0.9620195587900842,
+            "category": "bet",
+            "correct": 21150,
+            "total": 21985
+          },
+          {
+            "accuracy": 0.9367238320520402,
+            "category": "insurance",
+            "correct": 1584,
+            "total": 1691
+          },
+          {
+            "accuracy": 0.929758890234504,
+            "category": "play",
+            "correct": 25335,
+            "total": 27249
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.988385897899138,
+            "category": "<BET_MIN>",
+            "correct": 19148,
+            "total": 19373
+          },
+          {
+            "accuracy": 0.7915254237288135,
+            "category": "<BET_LOW>",
+            "correct": 1401,
+            "total": 1770
+          },
+          {
+            "accuracy": 0.6417112299465241,
+            "category": "<BET_MEDIUM>",
+            "correct": 360,
+            "total": 561
+          },
+          {
+            "accuracy": 0.8576512455516014,
+            "category": "<BET_HIGH>",
+            "correct": 241,
+            "total": 281
+          },
+          {
+            "accuracy": 0.9315478977432344,
+            "category": "<HIT>",
+            "correct": 9948,
+            "total": 10679
+          },
+          {
+            "accuracy": 0.9473974328687298,
+            "category": "<STAND>",
+            "correct": 12031,
+            "total": 12699
+          },
+          {
+            "accuracy": 0.9376068376068376,
+            "category": "<DOUBLE>",
+            "correct": 2194,
+            "total": 2340
+          },
+          {
+            "accuracy": 0.9105691056910569,
+            "category": "<SPLIT>",
+            "correct": 560,
+            "total": 615
+          },
+          {
+            "accuracy": 0.6572052401746725,
+            "category": "<SURRENDER>",
+            "correct": 602,
+            "total": 916
+          },
+          {
+            "accuracy": 0.5389221556886228,
+            "category": "<INSURANCE>",
+            "correct": 90,
+            "total": 167
+          },
+          {
+            "accuracy": 0.9803149606299213,
+            "category": "<NO_INSURANCE>",
+            "correct": 1494,
+            "total": 1524
+          }
+        ],
+        "correct": 48069,
+        "mean_loss": 0.13681398538613823,
+        "regret_by_kind": [
+          {
+            "category": "play",
+            "maximum_regret": 1.6903169999999998,
+            "mean_regret": 0.006936082021358581,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.013232000000000022,
+            "total": 27249
+          },
+          {
+            "category": "insurance",
+            "maximum_regret": 0.07303370786516854,
+            "mean_regret": 0.0008487789606048088,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.004098360655737705,
+            "total": 1691
+          }
+        ],
+        "total": 50925
+      }
+    },
+    {
+      "elapsed_seconds": 462.64684045803733,
+      "epoch": 4,
+      "training": {
+        "accuracy": 0.9208801381001226,
+        "by_kind": [
+          {
+            "accuracy": 0.9325790542500725,
+            "category": "bet",
+            "correct": 32146,
+            "total": 34470
+          },
+          {
+            "accuracy": 0.9269287833827893,
+            "category": "insurance",
+            "correct": 2499,
+            "total": 2696
+          },
+          {
+            "accuracy": 0.9110716289508135,
+            "category": "play",
+            "correct": 38972,
+            "total": 42776
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9810008203445447,
+            "category": "<BET_MIN>",
+            "correct": 29896,
+            "total": 30475
+          },
+          {
+            "accuracy": 0.6084202682563339,
+            "category": "<BET_LOW>",
+            "correct": 1633,
+            "total": 2684
+          },
+          {
+            "accuracy": 0.4222972972972973,
+            "category": "<BET_MEDIUM>",
+            "correct": 375,
+            "total": 888
+          },
+          {
+            "accuracy": 0.5721040189125296,
+            "category": "<BET_HIGH>",
+            "correct": 242,
+            "total": 423
+          },
+          {
+            "accuracy": 0.8947462260786877,
+            "category": "<HIT>",
+            "correct": 15055,
+            "total": 16826
+          },
+          {
+            "accuracy": 0.9423786262585984,
+            "category": "<STAND>",
+            "correct": 18906,
+            "total": 20062
+          },
+          {
+            "accuracy": 0.8856741573033707,
+            "category": "<DOUBLE>",
+            "correct": 3153,
+            "total": 3560
+          },
+          {
+            "accuracy": 0.8932038834951457,
+            "category": "<SPLIT>",
+            "correct": 828,
+            "total": 927
+          },
+          {
+            "accuracy": 0.7351891506067095,
+            "category": "<SURRENDER>",
+            "correct": 1030,
+            "total": 1401
+          },
+          {
+            "accuracy": 0.509090909090909,
+            "category": "<INSURANCE>",
+            "correct": 140,
+            "total": 275
+          },
+          {
+            "accuracy": 0.9743907476249484,
+            "category": "<NO_INSURANCE>",
+            "correct": 2359,
+            "total": 2421
+          }
+        ],
+        "correct": 73617,
+        "mean_loss": 0.18832613154397662,
+        "regret_by_kind": [],
+        "total": 79942
+      },
+      "validation": {
+        "accuracy": 0.9407560137457045,
+        "basic_strategy_comparison": {
+          "agreement_model_accuracy": 0.9560996364198964,
+          "agreement_model_correct": 24719,
+          "agreement_total": 25854,
+          "deviation_model_accuracy": 0.5111111111111111,
+          "deviation_model_correct": 713,
+          "deviation_total": 1395
+        },
+        "bet_policy": {
+          "maximum_absolute_fraction_error": 0.029083593741509914,
+          "maximum_absolute_log_growth_change": 0.0017680091865814346,
+          "mean_absolute_fraction_error": 0.0010584533949973653,
+          "mean_absolute_log_growth_change": 1.188517131062985e-05,
+          "percentile_95_absolute_fraction_error": 0.002009902116163643,
+          "percentile_95_absolute_log_growth_change": 3.4531913523316195e-05,
+          "total": 21985
+        },
+        "by_kind": [
+          {
+            "accuracy": 0.9522856493063452,
+            "category": "bet",
+            "correct": 20936,
+            "total": 21985
+          },
+          {
+            "accuracy": 0.9107037256061502,
+            "category": "insurance",
+            "correct": 1540,
+            "total": 1691
+          },
+          {
+            "accuracy": 0.9333186538955558,
+            "category": "play",
+            "correct": 25432,
+            "total": 27249
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9959737779383678,
+            "category": "<BET_MIN>",
+            "correct": 19295,
+            "total": 19373
+          },
+          {
+            "accuracy": 0.6711864406779661,
+            "category": "<BET_LOW>",
+            "correct": 1188,
+            "total": 1770
+          },
+          {
+            "accuracy": 0.5169340463458111,
+            "category": "<BET_MEDIUM>",
+            "correct": 290,
+            "total": 561
+          },
+          {
+            "accuracy": 0.5800711743772242,
+            "category": "<BET_HIGH>",
+            "correct": 163,
+            "total": 281
+          },
+          {
+            "accuracy": 0.9229328588819178,
+            "category": "<HIT>",
+            "correct": 9856,
+            "total": 10679
+          },
+          {
+            "accuracy": 0.9533034097173005,
+            "category": "<STAND>",
+            "correct": 12106,
+            "total": 12699
+          },
+          {
+            "accuracy": 0.9264957264957265,
+            "category": "<DOUBLE>",
+            "correct": 2168,
+            "total": 2340
+          },
+          {
+            "accuracy": 0.943089430894309,
+            "category": "<SPLIT>",
+            "correct": 580,
+            "total": 615
+          },
+          {
+            "accuracy": 0.7882096069868996,
+            "category": "<SURRENDER>",
+            "correct": 722,
+            "total": 916
+          },
+          {
+            "accuracy": 0.09580838323353294,
+            "category": "<INSURANCE>",
+            "correct": 16,
+            "total": 167
+          },
+          {
+            "accuracy": 1.0,
+            "category": "<NO_INSURANCE>",
+            "correct": 1524,
+            "total": 1524
+          }
+        ],
+        "correct": 47908,
+        "mean_loss": 0.13893365745925998,
+        "regret_by_kind": [
+          {
+            "category": "play",
+            "maximum_regret": 1.649006,
+            "mean_regret": 0.005947648977944145,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.01134400000000002,
+            "total": 27249
+          },
+          {
+            "category": "insurance",
+            "maximum_regret": 0.14516129032258066,
+            "mean_regret": 0.0020323824693462248,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.013513513513513514,
+            "total": 1691
+          }
+        ],
+        "total": 50925
+      }
+    },
+    {
+      "elapsed_seconds": 464.51557795796543,
+      "epoch": 5,
+      "training": {
+        "accuracy": 0.925833729453854,
+        "by_kind": [
+          {
+            "accuracy": 0.9345807948941108,
+            "category": "bet",
+            "correct": 32215,
+            "total": 34470
+          },
+          {
+            "accuracy": 0.9328635014836796,
+            "category": "insurance",
+            "correct": 2515,
+            "total": 2696
+          },
+          {
+            "accuracy": 0.9183420609687676,
+            "category": "play",
+            "correct": 39283,
+            "total": 42776
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9814602132895817,
+            "category": "<BET_MIN>",
+            "correct": 29910,
+            "total": 30475
+          },
+          {
+            "accuracy": 0.6199701937406855,
+            "category": "<BET_LOW>",
+            "correct": 1664,
+            "total": 2684
+          },
+          {
+            "accuracy": 0.42454954954954954,
+            "category": "<BET_MEDIUM>",
+            "correct": 377,
+            "total": 888
+          },
+          {
+            "accuracy": 0.624113475177305,
+            "category": "<BET_HIGH>",
+            "correct": 264,
+            "total": 423
+          },
+          {
+            "accuracy": 0.9009865684060383,
+            "category": "<HIT>",
+            "correct": 15160,
+            "total": 16826
+          },
+          {
+            "accuracy": 0.9489083840095703,
+            "category": "<STAND>",
+            "correct": 19037,
+            "total": 20062
+          },
+          {
+            "accuracy": 0.8994382022471911,
+            "category": "<DOUBLE>",
+            "correct": 3202,
+            "total": 3560
+          },
+          {
+            "accuracy": 0.9158576051779935,
+            "category": "<SPLIT>",
+            "correct": 849,
+            "total": 927
+          },
+          {
+            "accuracy": 0.7387580299785867,
+            "category": "<SURRENDER>",
+            "correct": 1035,
+            "total": 1401
+          },
+          {
+            "accuracy": 0.56,
+            "category": "<INSURANCE>",
+            "correct": 154,
+            "total": 275
+          },
+          {
+            "accuracy": 0.9752168525402726,
+            "category": "<NO_INSURANCE>",
+            "correct": 2361,
+            "total": 2421
+          }
+        ],
+        "correct": 74013,
+        "mean_loss": 0.17667274997698912,
+        "regret_by_kind": [],
+        "total": 79942
+      },
+      "validation": {
+        "accuracy": 0.9465292096219932,
+        "basic_strategy_comparison": {
+          "agreement_model_accuracy": 0.965305175214667,
+          "agreement_model_correct": 24957,
+          "agreement_total": 25854,
+          "deviation_model_accuracy": 0.5297491039426523,
+          "deviation_model_correct": 739,
+          "deviation_total": 1395
+        },
+        "bet_policy": {
+          "maximum_absolute_fraction_error": 0.029083593741509914,
+          "maximum_absolute_log_growth_change": 0.0017680091865814346,
+          "mean_absolute_fraction_error": 0.0010531314887791657,
+          "mean_absolute_log_growth_change": 1.1639404449514986e-05,
+          "percentile_95_absolute_fraction_error": 0.002035422216720235,
+          "percentile_95_absolute_log_growth_change": 3.3236781420351973e-05,
+          "total": 21985
+        },
+        "by_kind": [
+          {
+            "accuracy": 0.951239481464635,
+            "category": "bet",
+            "correct": 20913,
+            "total": 21985
+          },
+          {
+            "accuracy": 0.9420461265523359,
+            "category": "insurance",
+            "correct": 1593,
+            "total": 1691
+          },
+          {
+            "accuracy": 0.9430070828287277,
+            "category": "play",
+            "correct": 25696,
+            "total": 27249
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9974190884220306,
+            "category": "<BET_MIN>",
+            "correct": 19323,
+            "total": 19373
+          },
+          {
+            "accuracy": 0.5954802259887005,
+            "category": "<BET_LOW>",
+            "correct": 1054,
+            "total": 1770
+          },
+          {
+            "accuracy": 0.49376114081996436,
+            "category": "<BET_MEDIUM>",
+            "correct": 277,
+            "total": 561
+          },
+          {
+            "accuracy": 0.9217081850533808,
+            "category": "<BET_HIGH>",
+            "correct": 259,
+            "total": 281
+          },
+          {
+            "accuracy": 0.9201236070793145,
+            "category": "<HIT>",
+            "correct": 9826,
+            "total": 10679
+          },
+          {
+            "accuracy": 0.9733049846444602,
+            "category": "<STAND>",
+            "correct": 12360,
+            "total": 12699
+          },
+          {
+            "accuracy": 0.941025641025641,
+            "category": "<DOUBLE>",
+            "correct": 2202,
+            "total": 2340
+          },
+          {
+            "accuracy": 0.9154471544715447,
+            "category": "<SPLIT>",
+            "correct": 563,
+            "total": 615
+          },
+          {
+            "accuracy": 0.8133187772925764,
+            "category": "<SURRENDER>",
+            "correct": 745,
+            "total": 916
+          },
+          {
+            "accuracy": 0.4491017964071856,
+            "category": "<INSURANCE>",
+            "correct": 75,
+            "total": 167
+          },
+          {
+            "accuracy": 0.9960629921259843,
+            "category": "<NO_INSURANCE>",
+            "correct": 1518,
+            "total": 1524
+          }
+        ],
+        "correct": 48202,
+        "mean_loss": 0.12536430355785053,
+        "regret_by_kind": [
+          {
+            "category": "play",
+            "maximum_regret": 1.479559,
+            "mean_regret": 0.004087970274138501,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.003890999999999978,
+            "total": 27249
+          },
+          {
+            "category": "insurance",
+            "maximum_regret": 0.09042553191489362,
+            "mean_regret": 0.0009181013608234301,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.003355704697986577,
+            "total": 1691
+          }
+        ],
+        "total": 50925
+      }
+    },
+    {
+      "elapsed_seconds": 442.8127563750022,
+      "epoch": 6,
+      "training": {
+        "accuracy": 0.9293362687948763,
+        "by_kind": [
+          {
+            "accuracy": 0.9386713083841021,
+            "category": "bet",
+            "correct": 32356,
+            "total": 34470
+          },
+          {
+            "accuracy": 0.9350890207715133,
+            "category": "insurance",
+            "correct": 2521,
+            "total": 2696
+          },
+          {
+            "accuracy": 0.9214512810922012,
+            "category": "play",
+            "correct": 39416,
+            "total": 42776
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.982707136997539,
+            "category": "<BET_MIN>",
+            "correct": 29948,
+            "total": 30475
+          },
+          {
+            "accuracy": 0.6348733233979136,
+            "category": "<BET_LOW>",
+            "correct": 1704,
+            "total": 2684
+          },
+          {
+            "accuracy": 0.48085585585585583,
+            "category": "<BET_MEDIUM>",
+            "correct": 427,
+            "total": 888
+          },
+          {
+            "accuracy": 0.6548463356973995,
+            "category": "<BET_HIGH>",
+            "correct": 277,
+            "total": 423
+          },
+          {
+            "accuracy": 0.9059194104362297,
+            "category": "<HIT>",
+            "correct": 15243,
+            "total": 16826
+          },
+          {
+            "accuracy": 0.949506529757751,
+            "category": "<STAND>",
+            "correct": 19049,
+            "total": 20062
+          },
+          {
+            "accuracy": 0.9028089887640449,
+            "category": "<DOUBLE>",
+            "correct": 3214,
+            "total": 3560
+          },
+          {
+            "accuracy": 0.9093851132686084,
+            "category": "<SPLIT>",
+            "correct": 843,
+            "total": 927
+          },
+          {
+            "accuracy": 0.761598857958601,
+            "category": "<SURRENDER>",
+            "correct": 1067,
+            "total": 1401
+          },
+          {
+            "accuracy": 0.5963636363636363,
+            "category": "<INSURANCE>",
+            "correct": 164,
+            "total": 275
+          },
+          {
+            "accuracy": 0.9735646427096242,
+            "category": "<NO_INSURANCE>",
+            "correct": 2357,
+            "total": 2421
+          }
+        ],
+        "correct": 74293,
+        "mean_loss": 0.16644227810219453,
+        "regret_by_kind": [],
+        "total": 79942
+      },
+      "validation": {
+        "accuracy": 0.9376730486008836,
+        "basic_strategy_comparison": {
+          "agreement_model_accuracy": 0.9680126866248936,
+          "agreement_model_correct": 25027,
+          "agreement_total": 25854,
+          "deviation_model_accuracy": 0.5161290322580645,
+          "deviation_model_correct": 720,
+          "deviation_total": 1395
+        },
+        "bet_policy": {
+          "maximum_absolute_fraction_error": 0.029083593741509914,
+          "maximum_absolute_log_growth_change": 0.0017680091865814346,
+          "mean_absolute_fraction_error": 0.001148031220567025,
+          "mean_absolute_log_growth_change": 1.2987962130667119e-05,
+          "percentile_95_absolute_fraction_error": 0.002645870876979068,
+          "percentile_95_absolute_log_growth_change": 3.817592482382126e-05,
+          "total": 21985
+        },
+        "by_kind": [
+          {
+            "accuracy": 0.9282692745053446,
+            "category": "bet",
+            "correct": 20408,
+            "total": 21985
+          },
+          {
+            "accuracy": 0.9438202247191011,
+            "category": "insurance",
+            "correct": 1596,
+            "total": 1691
+          },
+          {
+            "accuracy": 0.9448787111453631,
+            "category": "play",
+            "correct": 25747,
+            "total": 27249
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9980901254323027,
+            "category": "<BET_MIN>",
+            "correct": 19336,
+            "total": 19373
+          },
+          {
+            "accuracy": 0.42203389830508475,
+            "category": "<BET_LOW>",
+            "correct": 747,
+            "total": 1770
+          },
+          {
+            "accuracy": 0.26559714795008915,
+            "category": "<BET_MEDIUM>",
+            "correct": 149,
+            "total": 561
+          },
+          {
+            "accuracy": 0.6263345195729537,
+            "category": "<BET_HIGH>",
+            "correct": 176,
+            "total": 281
+          },
+          {
+            "accuracy": 0.9444704560352093,
+            "category": "<HIT>",
+            "correct": 10086,
+            "total": 10679
+          },
+          {
+            "accuracy": 0.9619655090952044,
+            "category": "<STAND>",
+            "correct": 12216,
+            "total": 12699
+          },
+          {
+            "accuracy": 0.9568376068376069,
+            "category": "<DOUBLE>",
+            "correct": 2239,
+            "total": 2340
+          },
+          {
+            "accuracy": 0.9512195121951219,
+            "category": "<SPLIT>",
+            "correct": 585,
+            "total": 615
+          },
+          {
+            "accuracy": 0.6779475982532751,
+            "category": "<SURRENDER>",
+            "correct": 621,
+            "total": 916
+          },
+          {
+            "accuracy": 0.7964071856287425,
+            "category": "<INSURANCE>",
+            "correct": 133,
+            "total": 167
+          },
+          {
+            "accuracy": 0.9599737532808399,
+            "category": "<NO_INSURANCE>",
+            "correct": 1463,
+            "total": 1524
+          }
+        ],
+        "correct": 47751,
+        "mean_loss": 0.14610568089802942,
+        "regret_by_kind": [
+          {
+            "category": "play",
+            "maximum_regret": 1.637487,
+            "mean_regret": 0.004217082461741716,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0027339999999999864,
+            "total": 27249
+          },
+          {
+            "category": "insurance",
+            "maximum_regret": 0.04854368932038835,
+            "mean_regret": 0.000592764703136793,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0,
+            "total": 1691
+          }
+        ],
+        "total": 50925
+      }
+    },
+    {
+      "elapsed_seconds": 427.047512332967,
+      "epoch": 7,
+      "training": {
+        "accuracy": 0.9323634635110455,
+        "by_kind": [
+          {
+            "accuracy": 0.9378590078328982,
+            "category": "bet",
+            "correct": 32328,
+            "total": 34470
+          },
+          {
+            "accuracy": 0.9402818991097923,
+            "category": "insurance",
+            "correct": 2535,
+            "total": 2696
+          },
+          {
+            "accuracy": 0.9274359453899382,
+            "category": "play",
+            "correct": 39672,
+            "total": 42776
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.982247744052502,
+            "category": "<BET_MIN>",
+            "correct": 29934,
+            "total": 30475
+          },
+          {
+            "accuracy": 0.6233233979135618,
+            "category": "<BET_LOW>",
+            "correct": 1673,
+            "total": 2684
+          },
+          {
+            "accuracy": 0.5067567567567568,
+            "category": "<BET_MEDIUM>",
+            "correct": 450,
+            "total": 888
+          },
+          {
+            "accuracy": 0.640661938534279,
+            "category": "<BET_HIGH>",
+            "correct": 271,
+            "total": 423
+          },
+          {
+            "accuracy": 0.9123974800903364,
+            "category": "<HIT>",
+            "correct": 15352,
+            "total": 16826
+          },
+          {
+            "accuracy": 0.9542916957431961,
+            "category": "<STAND>",
+            "correct": 19145,
+            "total": 20062
+          },
+          {
+            "accuracy": 0.9165730337078651,
+            "category": "<DOUBLE>",
+            "correct": 3263,
+            "total": 3560
+          },
+          {
+            "accuracy": 0.9158576051779935,
+            "category": "<SPLIT>",
+            "correct": 849,
+            "total": 927
+          },
+          {
+            "accuracy": 0.7587437544610992,
+            "category": "<SURRENDER>",
+            "correct": 1063,
+            "total": 1401
+          },
+          {
+            "accuracy": 0.6254545454545455,
+            "category": "<INSURANCE>",
+            "correct": 172,
+            "total": 275
+          },
+          {
+            "accuracy": 0.9760429574555969,
+            "category": "<NO_INSURANCE>",
+            "correct": 2363,
+            "total": 2421
+          }
+        ],
+        "correct": 74535,
+        "mean_loss": 0.16024077244762625,
+        "regret_by_kind": [],
+        "total": 79942
+      },
+      "validation": {
+        "accuracy": 0.9509671084928817,
+        "basic_strategy_comparison": {
+          "agreement_model_accuracy": 0.9686315463758026,
+          "agreement_model_correct": 25043,
+          "agreement_total": 25854,
+          "deviation_model_accuracy": 0.5340501792114696,
+          "deviation_model_correct": 745,
+          "deviation_total": 1395
+        },
+        "bet_policy": {
+          "maximum_absolute_fraction_error": 0.029083593741509914,
+          "maximum_absolute_log_growth_change": 0.0017680091865814346,
+          "mean_absolute_fraction_error": 0.0010439988673165493,
+          "mean_absolute_log_growth_change": 1.1595404499318477e-05,
+          "percentile_95_absolute_fraction_error": 0.0019265649247432104,
+          "percentile_95_absolute_log_growth_change": 3.3446547694556684e-05,
+          "total": 21985
+        },
+        "by_kind": [
+          {
+            "accuracy": 0.9566977484648624,
+            "category": "bet",
+            "correct": 21033,
+            "total": 21985
+          },
+          {
+            "accuracy": 0.9503252513305737,
+            "category": "insurance",
+            "correct": 1607,
+            "total": 1691
+          },
+          {
+            "accuracy": 0.9463833535175603,
+            "category": "play",
+            "correct": 25788,
+            "total": 27249
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.996799669643318,
+            "category": "<BET_MIN>",
+            "correct": 19311,
+            "total": 19373
+          },
+          {
+            "accuracy": 0.6649717514124294,
+            "category": "<BET_LOW>",
+            "correct": 1177,
+            "total": 1770
+          },
+          {
+            "accuracy": 0.5472370766488414,
+            "category": "<BET_MEDIUM>",
+            "correct": 307,
+            "total": 561
+          },
+          {
+            "accuracy": 0.8469750889679716,
+            "category": "<BET_HIGH>",
+            "correct": 238,
+            "total": 281
+          },
+          {
+            "accuracy": 0.948871617192621,
+            "category": "<HIT>",
+            "correct": 10133,
+            "total": 10679
+          },
+          {
+            "accuracy": 0.9537758878651862,
+            "category": "<STAND>",
+            "correct": 12112,
+            "total": 12699
+          },
+          {
+            "accuracy": 0.9517094017094017,
+            "category": "<DOUBLE>",
+            "correct": 2227,
+            "total": 2340
+          },
+          {
+            "accuracy": 0.9528455284552846,
+            "category": "<SPLIT>",
+            "correct": 586,
+            "total": 615
+          },
+          {
+            "accuracy": 0.7969432314410481,
+            "category": "<SURRENDER>",
+            "correct": 730,
+            "total": 916
+          },
+          {
+            "accuracy": 0.6706586826347305,
+            "category": "<INSURANCE>",
+            "correct": 112,
+            "total": 167
+          },
+          {
+            "accuracy": 0.9809711286089239,
+            "category": "<NO_INSURANCE>",
+            "correct": 1495,
+            "total": 1524
+          }
+        ],
+        "correct": 48428,
+        "mean_loss": 0.11880157465494669,
+        "regret_by_kind": [
+          {
+            "category": "play",
+            "maximum_regret": 1.65205,
+            "mean_regret": 0.005120097508165437,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.001909999999999995,
+            "total": 27249
+          },
+          {
+            "category": "insurance",
+            "maximum_regret": 0.03932584269662921,
+            "mean_regret": 0.0005104807837150486,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0,
+            "total": 1691
+          }
+        ],
+        "total": 50925
+      }
+    },
+    {
+      "elapsed_seconds": 449.3979020420229,
+      "epoch": 8,
+      "training": {
+        "accuracy": 0.9359160391283681,
+        "by_kind": [
+          {
+            "accuracy": 0.941717435451117,
+            "category": "bet",
+            "correct": 32461,
+            "total": 34470
+          },
+          {
+            "accuracy": 0.9339762611275965,
+            "category": "insurance",
+            "correct": 2518,
+            "total": 2696
+          },
+          {
+            "accuracy": 0.9313633813353283,
+            "category": "play",
+            "correct": 39840,
+            "total": 42776
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9828712059064807,
+            "category": "<BET_MIN>",
+            "correct": 29953,
+            "total": 30475
+          },
+          {
+            "accuracy": 0.6665424739195231,
+            "category": "<BET_LOW>",
+            "correct": 1789,
+            "total": 2684
+          },
+          {
+            "accuracy": 0.5168918918918919,
+            "category": "<BET_MEDIUM>",
+            "correct": 459,
+            "total": 888
+          },
+          {
+            "accuracy": 0.6146572104018913,
+            "category": "<BET_HIGH>",
+            "correct": 260,
+            "total": 423
+          },
+          {
+            "accuracy": 0.9175086176155949,
+            "category": "<HIT>",
+            "correct": 15438,
+            "total": 16826
+          },
+          {
+            "accuracy": 0.9573821154421294,
+            "category": "<STAND>",
+            "correct": 19207,
+            "total": 20062
+          },
+          {
+            "accuracy": 0.9160112359550562,
+            "category": "<DOUBLE>",
+            "correct": 3261,
+            "total": 3560
+          },
+          {
+            "accuracy": 0.9212513484358145,
+            "category": "<SPLIT>",
+            "correct": 854,
+            "total": 927
+          },
+          {
+            "accuracy": 0.7708779443254818,
+            "category": "<SURRENDER>",
+            "correct": 1080,
+            "total": 1401
+          },
+          {
+            "accuracy": 0.610909090909091,
+            "category": "<INSURANCE>",
+            "correct": 168,
+            "total": 275
+          },
+          {
+            "accuracy": 0.9706732755059893,
+            "category": "<NO_INSURANCE>",
+            "correct": 2350,
+            "total": 2421
+          }
+        ],
+        "correct": 74819,
+        "mean_loss": 0.15267609729842838,
+        "regret_by_kind": [],
+        "total": 79942
+      },
+      "validation": {
+        "accuracy": 0.9520274914089347,
+        "basic_strategy_comparison": {
+          "agreement_model_accuracy": 0.9709909491761429,
+          "agreement_model_correct": 25104,
+          "agreement_total": 25854,
+          "deviation_model_accuracy": 0.5204301075268817,
+          "deviation_model_correct": 726,
+          "deviation_total": 1395
+        },
+        "bet_policy": {
+          "maximum_absolute_fraction_error": 0.029083593741509914,
+          "maximum_absolute_log_growth_change": 0.0017680091865814346,
+          "mean_absolute_fraction_error": 0.001033874615096705,
+          "mean_absolute_log_growth_change": 1.127922460151787e-05,
+          "percentile_95_absolute_fraction_error": 0.0018599123380637454,
+          "percentile_95_absolute_log_growth_change": 3.228172421048627e-05,
+          "total": 21985
+        },
+        "by_kind": [
+          {
+            "accuracy": 0.9591994541733,
+            "category": "bet",
+            "correct": 21088,
+            "total": 21985
+          },
+          {
+            "accuracy": 0.924896510940272,
+            "category": "insurance",
+            "correct": 1564,
+            "total": 1691
+          },
+          {
+            "accuracy": 0.9479246944842012,
+            "category": "play",
+            "correct": 25830,
+            "total": 27249
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9922056470345326,
+            "category": "<BET_MIN>",
+            "correct": 19222,
+            "total": 19373
+          },
+          {
+            "accuracy": 0.6621468926553672,
+            "category": "<BET_LOW>",
+            "correct": 1172,
+            "total": 1770
+          },
+          {
+            "accuracy": 0.8413547237076648,
+            "category": "<BET_MEDIUM>",
+            "correct": 472,
+            "total": 561
+          },
+          {
+            "accuracy": 0.7900355871886121,
+            "category": "<BET_HIGH>",
+            "correct": 222,
+            "total": 281
+          },
+          {
+            "accuracy": 0.918531697724506,
+            "category": "<HIT>",
+            "correct": 9809,
+            "total": 10679
+          },
+          {
+            "accuracy": 0.9766123316796598,
+            "category": "<STAND>",
+            "correct": 12402,
+            "total": 12699
+          },
+          {
+            "accuracy": 0.9722222222222222,
+            "category": "<DOUBLE>",
+            "correct": 2275,
+            "total": 2340
+          },
+          {
+            "accuracy": 0.9300813008130081,
+            "category": "<SPLIT>",
+            "correct": 572,
+            "total": 615
+          },
+          {
+            "accuracy": 0.8427947598253275,
+            "category": "<SURRENDER>",
+            "correct": 772,
+            "total": 916
+          },
+          {
+            "accuracy": 0.23952095808383234,
+            "category": "<INSURANCE>",
+            "correct": 40,
+            "total": 167
+          },
+          {
+            "accuracy": 1.0,
+            "category": "<NO_INSURANCE>",
+            "correct": 1524,
+            "total": 1524
+          }
+        ],
+        "correct": 48482,
+        "mean_loss": 0.11131351990973651,
+        "regret_by_kind": [
+          {
+            "category": "play",
+            "maximum_regret": 1.4577930000000001,
+            "mean_regret": 0.002574348966934566,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0009250000000000091,
+            "total": 27249
+          },
+          {
+            "category": "insurance",
+            "maximum_regret": 0.08536585365853659,
+            "mean_regret": 0.0013571139445485755,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.008928571428571428,
+            "total": 1691
+          }
+        ],
+        "total": 50925
+      }
+    },
+    {
+      "elapsed_seconds": 444.59243545803474,
+      "epoch": 9,
+      "training": {
+        "accuracy": 0.9386305071176603,
+        "by_kind": [
+          {
+            "accuracy": 0.9419495213228894,
+            "category": "bet",
+            "correct": 32469,
+            "total": 34470
+          },
+          {
+            "accuracy": 0.9362017804154302,
+            "category": "insurance",
+            "correct": 2524,
+            "total": 2696
+          },
+          {
+            "accuracy": 0.9361090331026743,
+            "category": "play",
+            "correct": 40043,
+            "total": 42776
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9830680885972108,
+            "category": "<BET_MIN>",
+            "correct": 29959,
+            "total": 30475
+          },
+          {
+            "accuracy": 0.65424739195231,
+            "category": "<BET_LOW>",
+            "correct": 1756,
+            "total": 2684
+          },
+          {
+            "accuracy": 0.5349099099099099,
+            "category": "<BET_MEDIUM>",
+            "correct": 475,
+            "total": 888
+          },
+          {
+            "accuracy": 0.6595744680851063,
+            "category": "<BET_HIGH>",
+            "correct": 279,
+            "total": 423
+          },
+          {
+            "accuracy": 0.9223225959824082,
+            "category": "<HIT>",
+            "correct": 15519,
+            "total": 16826
+          },
+          {
+            "accuracy": 0.959874389392882,
+            "category": "<STAND>",
+            "correct": 19257,
+            "total": 20062
+          },
+          {
+            "accuracy": 0.9286516853932584,
+            "category": "<DOUBLE>",
+            "correct": 3306,
+            "total": 3560
+          },
+          {
+            "accuracy": 0.9223300970873787,
+            "category": "<SPLIT>",
+            "correct": 855,
+            "total": 927
+          },
+          {
+            "accuracy": 0.7894361170592434,
+            "category": "<SURRENDER>",
+            "correct": 1106,
+            "total": 1401
+          },
+          {
+            "accuracy": 0.5854545454545454,
+            "category": "<INSURANCE>",
+            "correct": 161,
+            "total": 275
+          },
+          {
+            "accuracy": 0.9760429574555969,
+            "category": "<NO_INSURANCE>",
+            "correct": 2363,
+            "total": 2421
+          }
+        ],
+        "correct": 75036,
+        "mean_loss": 0.14597364276045868,
+        "regret_by_kind": [],
+        "total": 79942
+      },
+      "validation": {
+        "accuracy": 0.949887088856161,
+        "basic_strategy_comparison": {
+          "agreement_model_accuracy": 0.9683607952347799,
+          "agreement_model_correct": 25036,
+          "agreement_total": 25854,
+          "deviation_model_accuracy": 0.5577060931899641,
+          "deviation_model_correct": 778,
+          "deviation_total": 1395
+        },
+        "bet_policy": {
+          "maximum_absolute_fraction_error": 0.029083593741509914,
+          "maximum_absolute_log_growth_change": 0.0017680091865814346,
+          "mean_absolute_fraction_error": 0.0010608531508857428,
+          "mean_absolute_log_growth_change": 1.1224869688804697e-05,
+          "percentile_95_absolute_fraction_error": 0.002001737800292741,
+          "percentile_95_absolute_log_growth_change": 3.230605547509271e-05,
+          "total": 21985
+        },
+        "by_kind": [
+          {
+            "accuracy": 0.9529679326813737,
+            "category": "bet",
+            "correct": 20951,
+            "total": 21985
+          },
+          {
+            "accuracy": 0.9509166173861621,
+            "category": "insurance",
+            "correct": 1608,
+            "total": 1691
+          },
+          {
+            "accuracy": 0.9473375169731,
+            "category": "play",
+            "correct": 25814,
+            "total": 27249
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9860630774789656,
+            "category": "<BET_MIN>",
+            "correct": 19103,
+            "total": 19373
+          },
+          {
+            "accuracy": 0.6898305084745763,
+            "category": "<BET_LOW>",
+            "correct": 1221,
+            "total": 1770
+          },
+          {
+            "accuracy": 0.6221033868092691,
+            "category": "<BET_MEDIUM>",
+            "correct": 349,
+            "total": 561
+          },
+          {
+            "accuracy": 0.9893238434163701,
+            "category": "<BET_HIGH>",
+            "correct": 278,
+            "total": 281
+          },
+          {
+            "accuracy": 0.9263039610450416,
+            "category": "<HIT>",
+            "correct": 9892,
+            "total": 10679
+          },
+          {
+            "accuracy": 0.9739349555083078,
+            "category": "<STAND>",
+            "correct": 12368,
+            "total": 12699
+          },
+          {
+            "accuracy": 0.9222222222222223,
+            "category": "<DOUBLE>",
+            "correct": 2158,
+            "total": 2340
+          },
+          {
+            "accuracy": 0.9317073170731708,
+            "category": "<SPLIT>",
+            "correct": 573,
+            "total": 615
+          },
+          {
+            "accuracy": 0.898471615720524,
+            "category": "<SURRENDER>",
+            "correct": 823,
+            "total": 916
+          },
+          {
+            "accuracy": 0.6107784431137725,
+            "category": "<INSURANCE>",
+            "correct": 102,
+            "total": 167
+          },
+          {
+            "accuracy": 0.9881889763779528,
+            "category": "<NO_INSURANCE>",
+            "correct": 1506,
+            "total": 1524
+          }
+        ],
+        "correct": 48373,
+        "mean_loss": 0.11855327269787524,
+        "regret_by_kind": [
+          {
+            "category": "play",
+            "maximum_regret": 1.4577930000000001,
+            "mean_regret": 0.0033959053543249295,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0014930000000000082,
+            "total": 27249
+          },
+          {
+            "category": "insurance",
+            "maximum_regret": 0.04395604395604396,
+            "mean_regret": 0.0005056615317015332,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0,
+            "total": 1691
+          }
+        ],
+        "total": 50925
+      }
+    },
+    {
+      "elapsed_seconds": 455.4628226250061,
+      "epoch": 10,
+      "training": {
+        "accuracy": 0.9397563233344175,
+        "by_kind": [
+          {
+            "accuracy": 0.944473455178416,
+            "category": "bet",
+            "correct": 32556,
+            "total": 34470
+          },
+          {
+            "accuracy": 0.9458456973293768,
+            "category": "insurance",
+            "correct": 2550,
+            "total": 2696
+          },
+          {
+            "accuracy": 0.9355713484196746,
+            "category": "play",
+            "correct": 40020,
+            "total": 42776
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9831665299425759,
+            "category": "<BET_MIN>",
+            "correct": 29962,
+            "total": 30475
+          },
+          {
+            "accuracy": 0.6847988077496274,
+            "category": "<BET_LOW>",
+            "correct": 1838,
+            "total": 2684
+          },
+          {
+            "accuracy": 0.527027027027027,
+            "category": "<BET_MEDIUM>",
+            "correct": 468,
+            "total": 888
+          },
+          {
+            "accuracy": 0.6808510638297872,
+            "category": "<BET_HIGH>",
+            "correct": 288,
+            "total": 423
+          },
+          {
+            "accuracy": 0.9240461191013907,
+            "category": "<HIT>",
+            "correct": 15548,
+            "total": 16826
+          },
+          {
+            "accuracy": 0.9590270162496262,
+            "category": "<STAND>",
+            "correct": 19240,
+            "total": 20062
+          },
+          {
+            "accuracy": 0.9216292134831461,
+            "category": "<DOUBLE>",
+            "correct": 3281,
+            "total": 3560
+          },
+          {
+            "accuracy": 0.9277238403451996,
+            "category": "<SPLIT>",
+            "correct": 860,
+            "total": 927
+          },
+          {
+            "accuracy": 0.7787294789436117,
+            "category": "<SURRENDER>",
+            "correct": 1091,
+            "total": 1401
+          },
+          {
+            "accuracy": 0.6363636363636364,
+            "category": "<INSURANCE>",
+            "correct": 175,
+            "total": 275
+          },
+          {
+            "accuracy": 0.9809995869475423,
+            "category": "<NO_INSURANCE>",
+            "correct": 2375,
+            "total": 2421
+          }
+        ],
+        "correct": 75126,
+        "mean_loss": 0.1410329601448083,
+        "regret_by_kind": [],
+        "total": 79942
+      },
+      "validation": {
+        "accuracy": 0.9537358861070201,
+        "basic_strategy_comparison": {
+          "agreement_model_accuracy": 0.9723833836156881,
+          "agreement_model_correct": 25140,
+          "agreement_total": 25854,
+          "deviation_model_accuracy": 0.4652329749103943,
+          "deviation_model_correct": 649,
+          "deviation_total": 1395
+        },
+        "bet_policy": {
+          "maximum_absolute_fraction_error": 0.029083593741509914,
+          "maximum_absolute_log_growth_change": 0.0017680091865814346,
+          "mean_absolute_fraction_error": 0.0010243009557766047,
+          "mean_absolute_log_growth_change": 1.1258827848592394e-05,
+          "percentile_95_absolute_fraction_error": 0.001775421462984669,
+          "percentile_95_absolute_log_growth_change": 3.208672140450218e-05,
+          "total": 21985
+        },
+        "by_kind": [
+          {
+            "accuracy": 0.9631112121901296,
+            "category": "bet",
+            "correct": 21174,
+            "total": 21985
+          },
+          {
+            "accuracy": 0.9497338852749853,
+            "category": "insurance",
+            "correct": 1606,
+            "total": 1691
+          },
+          {
+            "accuracy": 0.9464200521120041,
+            "category": "play",
+            "correct": 25789,
+            "total": 27249
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9964899602539617,
+            "category": "<BET_MIN>",
+            "correct": 19305,
+            "total": 19373
+          },
+          {
+            "accuracy": 0.6666666666666666,
+            "category": "<BET_LOW>",
+            "correct": 1180,
+            "total": 1770
+          },
+          {
+            "accuracy": 0.7557932263814616,
+            "category": "<BET_MEDIUM>",
+            "correct": 424,
+            "total": 561
+          },
+          {
+            "accuracy": 0.9430604982206405,
+            "category": "<BET_HIGH>",
+            "correct": 265,
+            "total": 281
+          },
+          {
+            "accuracy": 0.9154415207416424,
+            "category": "<HIT>",
+            "correct": 9776,
+            "total": 10679
+          },
+          {
+            "accuracy": 0.9644853925505945,
+            "category": "<STAND>",
+            "correct": 12248,
+            "total": 12699
+          },
+          {
+            "accuracy": 0.9888888888888889,
+            "category": "<DOUBLE>",
+            "correct": 2314,
+            "total": 2340
+          },
+          {
+            "accuracy": 0.967479674796748,
+            "category": "<SPLIT>",
+            "correct": 595,
+            "total": 615
+          },
+          {
+            "accuracy": 0.9344978165938864,
+            "category": "<SURRENDER>",
+            "correct": 856,
+            "total": 916
+          },
+          {
+            "accuracy": 0.6646706586826348,
+            "category": "<INSURANCE>",
+            "correct": 111,
+            "total": 167
+          },
+          {
+            "accuracy": 0.9809711286089239,
+            "category": "<NO_INSURANCE>",
+            "correct": 1495,
+            "total": 1524
+          }
+        ],
+        "correct": 48569,
+        "mean_loss": 0.11058881757858634,
+        "regret_by_kind": [
+          {
+            "category": "play",
+            "maximum_regret": 1.658286,
+            "mean_regret": 0.004230635509559984,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0018409999999999815,
+            "total": 27249
+          },
+          {
+            "category": "insurance",
+            "maximum_regret": 0.047058823529411764,
+            "mean_regret": 0.0005517910363652646,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0,
+            "total": 1691
+          }
+        ],
+        "total": 50925
+      }
+    },
+    {
+      "elapsed_seconds": 453.29841520800255,
+      "epoch": 11,
+      "training": {
+        "accuracy": 0.9423957369092593,
+        "by_kind": [
+          {
+            "accuracy": 0.9455468523353641,
+            "category": "bet",
+            "correct": 32593,
+            "total": 34470
+          },
+          {
+            "accuracy": 0.9439910979228486,
+            "category": "insurance",
+            "correct": 2545,
+            "total": 2696
+          },
+          {
+            "accuracy": 0.9397559379091079,
+            "category": "play",
+            "correct": 40199,
+            "total": 42776
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9844790812141099,
+            "category": "<BET_MIN>",
+            "correct": 30002,
+            "total": 30475
+          },
+          {
+            "accuracy": 0.6851713859910581,
+            "category": "<BET_LOW>",
+            "correct": 1839,
+            "total": 2684
+          },
+          {
+            "accuracy": 0.536036036036036,
+            "category": "<BET_MEDIUM>",
+            "correct": 476,
+            "total": 888
+          },
+          {
+            "accuracy": 0.6524822695035462,
+            "category": "<BET_HIGH>",
+            "correct": 276,
+            "total": 423
+          },
+          {
+            "accuracy": 0.9276120290027339,
+            "category": "<HIT>",
+            "correct": 15608,
+            "total": 16826
+          },
+          {
+            "accuracy": 0.9623666633436347,
+            "category": "<STAND>",
+            "correct": 19307,
+            "total": 20062
+          },
+          {
+            "accuracy": 0.9331460674157304,
+            "category": "<DOUBLE>",
+            "correct": 3322,
+            "total": 3560
+          },
+          {
+            "accuracy": 0.9352750809061489,
+            "category": "<SPLIT>",
+            "correct": 867,
+            "total": 927
+          },
+          {
+            "accuracy": 0.7815845824411135,
+            "category": "<SURRENDER>",
+            "correct": 1095,
+            "total": 1401
+          },
+          {
+            "accuracy": 0.64,
+            "category": "<INSURANCE>",
+            "correct": 176,
+            "total": 275
+          },
+          {
+            "accuracy": 0.9785212722015696,
+            "category": "<NO_INSURANCE>",
+            "correct": 2369,
+            "total": 2421
+          }
+        ],
+        "correct": 75337,
+        "mean_loss": 0.13648970719118472,
+        "regret_by_kind": [],
+        "total": 79942
+      },
+      "validation": {
+        "accuracy": 0.9504369170348552,
+        "basic_strategy_comparison": {
+          "agreement_model_accuracy": 0.9790361259379593,
+          "agreement_model_correct": 25312,
+          "agreement_total": 25854,
+          "deviation_model_accuracy": 0.4838709677419355,
+          "deviation_model_correct": 675,
+          "deviation_total": 1395
+        },
+        "bet_policy": {
+          "maximum_absolute_fraction_error": 0.029083593741509914,
+          "maximum_absolute_log_growth_change": 0.0017680091865814346,
+          "mean_absolute_fraction_error": 0.0010669668651408016,
+          "mean_absolute_log_growth_change": 1.2052207386552757e-05,
+          "percentile_95_absolute_fraction_error": 0.002107346398531413,
+          "percentile_95_absolute_log_growth_change": 3.525958315874116e-05,
+          "total": 21985
+        },
+        "by_kind": [
+          {
+            "accuracy": 0.9477825790311576,
+            "category": "bet",
+            "correct": 20837,
+            "total": 21985
+          },
+          {
+            "accuracy": 0.9325842696629213,
+            "category": "insurance",
+            "correct": 1577,
+            "total": 1691
+          },
+          {
+            "accuracy": 0.953686373811883,
+            "category": "play",
+            "correct": 25987,
+            "total": 27249
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9978836525060651,
+            "category": "<BET_MIN>",
+            "correct": 19332,
+            "total": 19373
+          },
+          {
+            "accuracy": 0.6474576271186441,
+            "category": "<BET_LOW>",
+            "correct": 1146,
+            "total": 1770
+          },
+          {
+            "accuracy": 0.43672014260249553,
+            "category": "<BET_MEDIUM>",
+            "correct": 245,
+            "total": 561
+          },
+          {
+            "accuracy": 0.40569395017793597,
+            "category": "<BET_HIGH>",
+            "correct": 114,
+            "total": 281
+          },
+          {
+            "accuracy": 0.9495271092798951,
+            "category": "<HIT>",
+            "correct": 10140,
+            "total": 10679
+          },
+          {
+            "accuracy": 0.9674777541538704,
+            "category": "<STAND>",
+            "correct": 12286,
+            "total": 12699
+          },
+          {
+            "accuracy": 0.9504273504273504,
+            "category": "<DOUBLE>",
+            "correct": 2224,
+            "total": 2340
+          },
+          {
+            "accuracy": 0.8861788617886179,
+            "category": "<SPLIT>",
+            "correct": 545,
+            "total": 615
+          },
+          {
+            "accuracy": 0.8646288209606987,
+            "category": "<SURRENDER>",
+            "correct": 792,
+            "total": 916
+          },
+          {
+            "accuracy": 0.31736526946107785,
+            "category": "<INSURANCE>",
+            "correct": 53,
+            "total": 167
+          },
+          {
+            "accuracy": 1.0,
+            "category": "<NO_INSURANCE>",
+            "correct": 1524,
+            "total": 1524
+          }
+        ],
+        "correct": 48401,
+        "mean_loss": 0.11273422704236906,
+        "regret_by_kind": [
+          {
+            "category": "play",
+            "maximum_regret": 0.847961,
+            "mean_regret": 0.00221500825718375,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0,
+            "total": 27249
+          },
+          {
+            "category": "insurance",
+            "maximum_regret": 0.09042553191489362,
+            "mean_regret": 0.00122846003207496,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0056179775280898875,
+            "total": 1691
+          }
+        ],
+        "total": 50925
+      }
+    },
+    {
+      "elapsed_seconds": 454.419003875053,
+      "epoch": 12,
+      "training": {
+        "accuracy": 0.9436966800930675,
+        "by_kind": [
+          {
+            "accuracy": 0.947171453437772,
+            "category": "bet",
+            "correct": 32649,
+            "total": 34470
+          },
+          {
+            "accuracy": 0.9491839762611276,
+            "category": "insurance",
+            "correct": 2559,
+            "total": 2696
+          },
+          {
+            "accuracy": 0.9405507761361511,
+            "category": "play",
+            "correct": 40233,
+            "total": 42776
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9842821985233798,
+            "category": "<BET_MIN>",
+            "correct": 29996,
+            "total": 30475
+          },
+          {
+            "accuracy": 0.6978390461997019,
+            "category": "<BET_LOW>",
+            "correct": 1873,
+            "total": 2684
+          },
+          {
+            "accuracy": 0.5506756756756757,
+            "category": "<BET_MEDIUM>",
+            "correct": 489,
+            "total": 888
+          },
+          {
+            "accuracy": 0.6879432624113475,
+            "category": "<BET_HIGH>",
+            "correct": 291,
+            "total": 423
+          },
+          {
+            "accuracy": 0.9290383929632712,
+            "category": "<HIT>",
+            "correct": 15632,
+            "total": 16826
+          },
+          {
+            "accuracy": 0.9620675904695444,
+            "category": "<STAND>",
+            "correct": 19301,
+            "total": 20062
+          },
+          {
+            "accuracy": 0.9300561797752809,
+            "category": "<DOUBLE>",
+            "correct": 3311,
+            "total": 3560
+          },
+          {
+            "accuracy": 0.9341963322545846,
+            "category": "<SPLIT>",
+            "correct": 866,
+            "total": 927
+          },
+          {
+            "accuracy": 0.801570306923626,
+            "category": "<SURRENDER>",
+            "correct": 1123,
+            "total": 1401
+          },
+          {
+            "accuracy": 0.68,
+            "category": "<INSURANCE>",
+            "correct": 187,
+            "total": 275
+          },
+          {
+            "accuracy": 0.979760429574556,
+            "category": "<NO_INSURANCE>",
+            "correct": 2372,
+            "total": 2421
+          }
+        ],
+        "correct": 75441,
+        "mean_loss": 0.13326195565883137,
+        "regret_by_kind": [],
+        "total": 79942
+      },
+      "validation": {
+        "accuracy": 0.9597643593519882,
+        "basic_strategy_comparison": {
+          "agreement_model_accuracy": 0.9815889224104587,
+          "agreement_model_correct": 25378,
+          "agreement_total": 25854,
+          "deviation_model_accuracy": 0.47240143369175625,
+          "deviation_model_correct": 659,
+          "deviation_total": 1395
+        },
+        "bet_policy": {
+          "maximum_absolute_fraction_error": 0.029083593741509914,
+          "maximum_absolute_log_growth_change": 0.0017680091865814346,
+          "mean_absolute_fraction_error": 0.0010190600654087208,
+          "mean_absolute_log_growth_change": 1.125222012009844e-05,
+          "percentile_95_absolute_fraction_error": 0.0017636376112709082,
+          "percentile_95_absolute_log_growth_change": 3.258624835699842e-05,
+          "total": 21985
+        },
+        "by_kind": [
+          {
+            "accuracy": 0.9648851489652035,
+            "category": "bet",
+            "correct": 21213,
+            "total": 21985
+          },
+          {
+            "accuracy": 0.9615612063867534,
+            "category": "insurance",
+            "correct": 1626,
+            "total": 1691
+          },
+          {
+            "accuracy": 0.9555213035340746,
+            "category": "play",
+            "correct": 26037,
+            "total": 27249
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9902957724668353,
+            "category": "<BET_MIN>",
+            "correct": 19185,
+            "total": 19373
+          },
+          {
+            "accuracy": 0.8124293785310734,
+            "category": "<BET_LOW>",
+            "correct": 1438,
+            "total": 1770
+          },
+          {
+            "accuracy": 0.6470588235294118,
+            "category": "<BET_MEDIUM>",
+            "correct": 363,
+            "total": 561
+          },
+          {
+            "accuracy": 0.8078291814946619,
+            "category": "<BET_HIGH>",
+            "correct": 227,
+            "total": 281
+          },
+          {
+            "accuracy": 0.9281767955801105,
+            "category": "<HIT>",
+            "correct": 9912,
+            "total": 10679
+          },
+          {
+            "accuracy": 0.9827545476021734,
+            "category": "<STAND>",
+            "correct": 12480,
+            "total": 12699
+          },
+          {
+            "accuracy": 0.9615384615384616,
+            "category": "<DOUBLE>",
+            "correct": 2250,
+            "total": 2340
+          },
+          {
+            "accuracy": 0.9544715447154472,
+            "category": "<SPLIT>",
+            "correct": 587,
+            "total": 615
+          },
+          {
+            "accuracy": 0.8820960698689956,
+            "category": "<SURRENDER>",
+            "correct": 808,
+            "total": 916
+          },
+          {
+            "accuracy": 0.7664670658682635,
+            "category": "<INSURANCE>",
+            "correct": 128,
+            "total": 167
+          },
+          {
+            "accuracy": 0.9829396325459318,
+            "category": "<NO_INSURANCE>",
+            "correct": 1498,
+            "total": 1524
+          }
+        ],
+        "correct": 48876,
+        "mean_loss": 0.09827700167572492,
+        "regret_by_kind": [
+          {
+            "category": "play",
+            "maximum_regret": 1.315873,
+            "mean_regret": 0.0020111536937135305,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0,
+            "total": 27249
+          },
+          {
+            "category": "insurance",
+            "maximum_regret": 0.03932584269662921,
+            "mean_regret": 0.00037217831722241243,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0,
+            "total": 1691
+          }
+        ],
+        "total": 50925
+      }
+    },
+    {
+      "elapsed_seconds": 455.45203108299756,
+      "epoch": 13,
+      "training": {
+        "accuracy": 0.9449726051387256,
+        "by_kind": [
+          {
+            "accuracy": 0.9478967217870612,
+            "category": "bet",
+            "correct": 32674,
+            "total": 34470
+          },
+          {
+            "accuracy": 0.9432492581602374,
+            "category": "insurance",
+            "correct": 2543,
+            "total": 2696
+          },
+          {
+            "accuracy": 0.9427248924630633,
+            "category": "play",
+            "correct": 40326,
+            "total": 42776
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9846431501230517,
+            "category": "<BET_MIN>",
+            "correct": 30007,
+            "total": 30475
+          },
+          {
+            "accuracy": 0.7011922503725783,
+            "category": "<BET_LOW>",
+            "correct": 1882,
+            "total": 2684
+          },
+          {
+            "accuracy": 0.5675675675675675,
+            "category": "<BET_MEDIUM>",
+            "correct": 504,
+            "total": 888
+          },
+          {
+            "accuracy": 0.6643026004728132,
+            "category": "<BET_HIGH>",
+            "correct": 281,
+            "total": 423
+          },
+          {
+            "accuracy": 0.9311779389040771,
+            "category": "<HIT>",
+            "correct": 15668,
+            "total": 16826
+          },
+          {
+            "accuracy": 0.9630146545708305,
+            "category": "<STAND>",
+            "correct": 19320,
+            "total": 20062
+          },
+          {
+            "accuracy": 0.9370786516853933,
+            "category": "<DOUBLE>",
+            "correct": 3336,
+            "total": 3560
+          },
+          {
+            "accuracy": 0.9288025889967637,
+            "category": "<SPLIT>",
+            "correct": 861,
+            "total": 927
+          },
+          {
+            "accuracy": 0.814418272662384,
+            "category": "<SURRENDER>",
+            "correct": 1141,
+            "total": 1401
+          },
+          {
+            "accuracy": 0.6581818181818182,
+            "category": "<INSURANCE>",
+            "correct": 181,
+            "total": 275
+          },
+          {
+            "accuracy": 0.9756299049979348,
+            "category": "<NO_INSURANCE>",
+            "correct": 2362,
+            "total": 2421
+          }
+        ],
+        "correct": 75543,
+        "mean_loss": 0.12961482478466513,
+        "regret_by_kind": [],
+        "total": 79942
+      },
+      "validation": {
+        "accuracy": 0.9510652920962199,
+        "basic_strategy_comparison": {
+          "agreement_model_accuracy": 0.9840643614140945,
+          "agreement_model_correct": 25442,
+          "agreement_total": 25854,
+          "deviation_model_accuracy": 0.4974910394265233,
+          "deviation_model_correct": 694,
+          "deviation_total": 1395
+        },
+        "bet_policy": {
+          "maximum_absolute_fraction_error": 0.029083593741509914,
+          "maximum_absolute_log_growth_change": 0.0017680091865814346,
+          "mean_absolute_fraction_error": 0.00110221154000367,
+          "mean_absolute_log_growth_change": 1.1218813626836515e-05,
+          "percentile_95_absolute_fraction_error": 0.002352860711472435,
+          "percentile_95_absolute_log_growth_change": 3.213194743206776e-05,
+          "total": 21985
+        },
+        "by_kind": [
+          {
+            "accuracy": 0.9410052308392085,
+            "category": "bet",
+            "correct": 20688,
+            "total": 21985
+          },
+          {
+            "accuracy": 0.9515079834417505,
+            "category": "insurance",
+            "correct": 1609,
+            "total": 1691
+          },
+          {
+            "accuracy": 0.9591544643840141,
+            "category": "play",
+            "correct": 26136,
+            "total": 27249
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9730036648944407,
+            "category": "<BET_MIN>",
+            "correct": 18850,
+            "total": 19373
+          },
+          {
+            "accuracy": 0.6627118644067796,
+            "category": "<BET_LOW>",
+            "correct": 1173,
+            "total": 1770
+          },
+          {
+            "accuracy": 0.7094474153297683,
+            "category": "<BET_MEDIUM>",
+            "correct": 398,
+            "total": 561
+          },
+          {
+            "accuracy": 0.9501779359430605,
+            "category": "<BET_HIGH>",
+            "correct": 267,
+            "total": 281
+          },
+          {
+            "accuracy": 0.9518681524487311,
+            "category": "<HIT>",
+            "correct": 10165,
+            "total": 10679
+          },
+          {
+            "accuracy": 0.9716513111268604,
+            "category": "<STAND>",
+            "correct": 12339,
+            "total": 12699
+          },
+          {
+            "accuracy": 0.9482905982905983,
+            "category": "<DOUBLE>",
+            "correct": 2219,
+            "total": 2340
+          },
+          {
+            "accuracy": 0.9577235772357724,
+            "category": "<SPLIT>",
+            "correct": 589,
+            "total": 615
+          },
+          {
+            "accuracy": 0.8995633187772926,
+            "category": "<SURRENDER>",
+            "correct": 824,
+            "total": 916
+          },
+          {
+            "accuracy": 0.7844311377245509,
+            "category": "<INSURANCE>",
+            "correct": 131,
+            "total": 167
+          },
+          {
+            "accuracy": 0.9698162729658792,
+            "category": "<NO_INSURANCE>",
+            "correct": 1478,
+            "total": 1524
+          }
+        ],
+        "correct": 48433,
+        "mean_loss": 0.11824713542816039,
+        "regret_by_kind": [
+          {
+            "category": "play",
+            "maximum_regret": 1.684462,
+            "mean_regret": 0.002968725090829021,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0,
+            "total": 27249
+          },
+          {
+            "category": "insurance",
+            "maximum_regret": 0.05154639175257732,
+            "mean_regret": 0.0004765237588448546,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0,
+            "total": 1691
+          }
+        ],
+        "total": 50925
+      }
+    },
+    {
+      "elapsed_seconds": 442.38487700000405,
+      "epoch": 14,
+      "training": {
+        "accuracy": 0.94724925571039,
+        "by_kind": [
+          {
+            "accuracy": 0.9497534087612417,
+            "category": "bet",
+            "correct": 32738,
+            "total": 34470
+          },
+          {
+            "accuracy": 0.9551186943620178,
+            "category": "insurance",
+            "correct": 2575,
+            "total": 2696
+          },
+          {
+            "accuracy": 0.9447353656255845,
+            "category": "play",
+            "correct": 40412,
+            "total": 42776
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9848072190319934,
+            "category": "<BET_MIN>",
+            "correct": 30012,
+            "total": 30475
+          },
+          {
+            "accuracy": 0.7116244411326379,
+            "category": "<BET_LOW>",
+            "correct": 1910,
+            "total": 2684
+          },
+          {
+            "accuracy": 0.5754504504504504,
+            "category": "<BET_MEDIUM>",
+            "correct": 511,
+            "total": 888
+          },
+          {
+            "accuracy": 0.7210401891252955,
+            "category": "<BET_HIGH>",
+            "correct": 305,
+            "total": 423
+          },
+          {
+            "accuracy": 0.9346844169737312,
+            "category": "<HIT>",
+            "correct": 15727,
+            "total": 16826
+          },
+          {
+            "accuracy": 0.9659555378327186,
+            "category": "<STAND>",
+            "correct": 19379,
+            "total": 20062
+          },
+          {
+            "accuracy": 0.9342696629213483,
+            "category": "<DOUBLE>",
+            "correct": 3326,
+            "total": 3560
+          },
+          {
+            "accuracy": 0.9309600862998921,
+            "category": "<SPLIT>",
+            "correct": 863,
+            "total": 927
+          },
+          {
+            "accuracy": 0.7972876516773733,
+            "category": "<SURRENDER>",
+            "correct": 1117,
+            "total": 1401
+          },
+          {
+            "accuracy": 0.7236363636363636,
+            "category": "<INSURANCE>",
+            "correct": 199,
+            "total": 275
+          },
+          {
+            "accuracy": 0.9814126394052045,
+            "category": "<NO_INSURANCE>",
+            "correct": 2376,
+            "total": 2421
+          }
+        ],
+        "correct": 75725,
+        "mean_loss": 0.1267325772162059,
+        "regret_by_kind": [],
+        "total": 79942
+      },
+      "validation": {
+        "accuracy": 0.9561708394698085,
+        "basic_strategy_comparison": {
+          "agreement_model_accuracy": 0.9774889765606869,
+          "agreement_model_correct": 25272,
+          "agreement_total": 25854,
+          "deviation_model_accuracy": 0.5727598566308244,
+          "deviation_model_correct": 799,
+          "deviation_total": 1395
+        },
+        "bet_policy": {
+          "maximum_absolute_fraction_error": 0.029083593741509914,
+          "maximum_absolute_log_growth_change": 0.0017680091865814346,
+          "mean_absolute_fraction_error": 0.0010384213508149369,
+          "mean_absolute_log_growth_change": 1.1484733577695339e-05,
+          "percentile_95_absolute_fraction_error": 0.0019508525962289866,
+          "percentile_95_absolute_log_growth_change": 3.2412943796816443e-05,
+          "total": 21985
+        },
+        "by_kind": [
+          {
+            "accuracy": 0.9553331817148055,
+            "category": "bet",
+            "correct": 21003,
+            "total": 21985
+          },
+          {
+            "accuracy": 0.9574216439976345,
+            "category": "insurance",
+            "correct": 1619,
+            "total": 1691
+          },
+          {
+            "accuracy": 0.9567690557451649,
+            "category": "play",
+            "correct": 26071,
+            "total": 27249
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9992773447581685,
+            "category": "<BET_MIN>",
+            "correct": 19359,
+            "total": 19373
+          },
+          {
+            "accuracy": 0.5785310734463277,
+            "category": "<BET_LOW>",
+            "correct": 1024,
+            "total": 1770
+          },
+          {
+            "accuracy": 0.6310160427807486,
+            "category": "<BET_MEDIUM>",
+            "correct": 354,
+            "total": 561
+          },
+          {
+            "accuracy": 0.9466192170818505,
+            "category": "<BET_HIGH>",
+            "correct": 266,
+            "total": 281
+          },
+          {
+            "accuracy": 0.9630115179323907,
+            "category": "<HIT>",
+            "correct": 10284,
+            "total": 10679
+          },
+          {
+            "accuracy": 0.9692889203874321,
+            "category": "<STAND>",
+            "correct": 12309,
+            "total": 12699
+          },
+          {
+            "accuracy": 0.9371794871794872,
+            "category": "<DOUBLE>",
+            "correct": 2193,
+            "total": 2340
+          },
+          {
+            "accuracy": 0.9707317073170731,
+            "category": "<SPLIT>",
+            "correct": 597,
+            "total": 615
+          },
+          {
+            "accuracy": 0.7510917030567685,
+            "category": "<SURRENDER>",
+            "correct": 688,
+            "total": 916
+          },
+          {
+            "accuracy": 0.6646706586826348,
+            "category": "<INSURANCE>",
+            "correct": 111,
+            "total": 167
+          },
+          {
+            "accuracy": 0.989501312335958,
+            "category": "<NO_INSURANCE>",
+            "correct": 1508,
+            "total": 1524
+          }
+        ],
+        "correct": 48693,
+        "mean_loss": 0.10356331325946747,
+        "regret_by_kind": [
+          {
+            "category": "play",
+            "maximum_regret": 1.6027040000000001,
+            "mean_regret": 0.0019626929795588826,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0,
+            "total": 27249
+          },
+          {
+            "category": "insurance",
+            "maximum_regret": 0.047058823529411764,
+            "mean_regret": 0.00041833449384319786,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0,
+            "total": 1691
+          }
+        ],
+        "total": 50925
+      }
+    },
+    {
+      "elapsed_seconds": 423.30357300001197,
+      "epoch": 15,
+      "training": {
+        "accuracy": 0.9473243101248405,
+        "by_kind": [
+          {
+            "accuracy": 0.9493472584856397,
+            "category": "bet",
+            "correct": 32724,
+            "total": 34470
+          },
+          {
+            "accuracy": 0.952893175074184,
+            "category": "insurance",
+            "correct": 2569,
+            "total": 2696
+          },
+          {
+            "accuracy": 0.9453431830933233,
+            "category": "play",
+            "correct": 40438,
+            "total": 42776
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9852009844134536,
+            "category": "<BET_MIN>",
+            "correct": 30024,
+            "total": 30475
+          },
+          {
+            "accuracy": 0.7056631892697467,
+            "category": "<BET_LOW>",
+            "correct": 1894,
+            "total": 2684
+          },
+          {
+            "accuracy": 0.5641891891891891,
+            "category": "<BET_MEDIUM>",
+            "correct": 501,
+            "total": 888
+          },
+          {
+            "accuracy": 0.7210401891252955,
+            "category": "<BET_HIGH>",
+            "correct": 305,
+            "total": 423
+          },
+          {
+            "accuracy": 0.9361702127659575,
+            "category": "<HIT>",
+            "correct": 15752,
+            "total": 16826
+          },
+          {
+            "accuracy": 0.9645598644202971,
+            "category": "<STAND>",
+            "correct": 19351,
+            "total": 20062
+          },
+          {
+            "accuracy": 0.9367977528089888,
+            "category": "<DOUBLE>",
+            "correct": 3335,
+            "total": 3560
+          },
+          {
+            "accuracy": 0.9352750809061489,
+            "category": "<SPLIT>",
+            "correct": 867,
+            "total": 927
+          },
+          {
+            "accuracy": 0.8087080656673804,
+            "category": "<SURRENDER>",
+            "correct": 1133,
+            "total": 1401
+          },
+          {
+            "accuracy": 0.7090909090909091,
+            "category": "<INSURANCE>",
+            "correct": 195,
+            "total": 275
+          },
+          {
+            "accuracy": 0.9805865344898802,
+            "category": "<NO_INSURANCE>",
+            "correct": 2374,
+            "total": 2421
+          }
+        ],
+        "correct": 75731,
+        "mean_loss": 0.12677057201404807,
+        "regret_by_kind": [],
+        "total": 79942
+      },
+      "validation": {
+        "accuracy": 0.961512027491409,
+        "basic_strategy_comparison": {
+          "agreement_model_accuracy": 0.9769861530130735,
+          "agreement_model_correct": 25259,
+          "agreement_total": 25854,
+          "deviation_model_accuracy": 0.6078853046594982,
+          "deviation_model_correct": 848,
+          "deviation_total": 1395
+        },
+        "bet_policy": {
+          "maximum_absolute_fraction_error": 0.029083593741509914,
+          "maximum_absolute_log_growth_change": 0.0017680091865814346,
+          "mean_absolute_fraction_error": 0.0010194111428825992,
+          "mean_absolute_log_growth_change": 1.1204437028818141e-05,
+          "percentile_95_absolute_fraction_error": 0.0017457610909125442,
+          "percentile_95_absolute_log_growth_change": 3.2527496329219845e-05,
+          "total": 21985
+        },
+        "by_kind": [
+          {
+            "accuracy": 0.9664771435069366,
+            "category": "bet",
+            "correct": 21248,
+            "total": 21985
+          },
+          {
+            "accuracy": 0.9520993494973389,
+            "category": "insurance",
+            "correct": 1610,
+            "total": 1691
+          },
+          {
+            "accuracy": 0.958090205145143,
+            "category": "play",
+            "correct": 26107,
+            "total": 27249
+          }
+        ],
+        "by_target": [
+          {
+            "accuracy": 0.9889536984462912,
+            "category": "<BET_MIN>",
+            "correct": 19159,
+            "total": 19373
+          },
+          {
+            "accuracy": 0.8203389830508474,
+            "category": "<BET_LOW>",
+            "correct": 1452,
+            "total": 1770
+          },
+          {
+            "accuracy": 0.803921568627451,
+            "category": "<BET_MEDIUM>",
+            "correct": 451,
+            "total": 561
+          },
+          {
+            "accuracy": 0.6619217081850534,
+            "category": "<BET_HIGH>",
+            "correct": 186,
+            "total": 281
+          },
+          {
+            "accuracy": 0.9572057308736773,
+            "category": "<HIT>",
+            "correct": 10222,
+            "total": 10679
+          },
+          {
+            "accuracy": 0.9684227104496417,
+            "category": "<STAND>",
+            "correct": 12298,
+            "total": 12699
+          },
+          {
+            "accuracy": 0.9517094017094017,
+            "category": "<DOUBLE>",
+            "correct": 2227,
+            "total": 2340
+          },
+          {
+            "accuracy": 0.9642276422764228,
+            "category": "<SPLIT>",
+            "correct": 593,
+            "total": 615
+          },
+          {
+            "accuracy": 0.8373362445414847,
+            "category": "<SURRENDER>",
+            "correct": 767,
+            "total": 916
+          },
+          {
+            "accuracy": 0.5688622754491018,
+            "category": "<INSURANCE>",
+            "correct": 95,
+            "total": 167
+          },
+          {
+            "accuracy": 0.9940944881889764,
+            "category": "<NO_INSURANCE>",
+            "correct": 1515,
+            "total": 1524
+          }
+        ],
+        "correct": 48965,
+        "mean_loss": 0.09417782096079769,
+        "regret_by_kind": [
+          {
+            "category": "play",
+            "maximum_regret": 1.488399,
+            "mean_regret": 0.0019144369701640425,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0,
+            "total": 27249
+          },
+          {
+            "category": "insurance",
+            "maximum_regret": 0.047058823529411764,
+            "mean_regret": 0.0005467045906634751,
+            "objective": "expected_profit",
+            "percentile_95_regret": 0.0,
+            "total": 1691
+          }
+        ],
+        "total": 50925
+      }
+    }
+  ],
+  "model_configuration": {
+    "context_length": 256,
+    "dropout": 0.1,
+    "embedding_dimension": 128,
+    "feed_forward_dimension": 512,
+    "head_count": 4,
+    "layer_count": 4,
+    "position_scheme": "query-relative",
+    "vocabulary_size": 29
+  },
+  "parameter_count": 831488,
+  "training_configuration": {
+    "batch_size": 64,
+    "card_order_augmentation": "permute",
+    "device": "mps",
+    "epoch_count": 15,
+    "gradient_clip_norm": 1.0,
+    "learning_rate": 0.0003,
+    "maximum_class_amplification": 10.0,
+    "sampling_strategy": "natural",
+    "seed": 20250801,
+    "weight_decay": 0.01
+  },
+  "training_decision_count": 79942,
+  "training_shoe_count": 779,
+  "validation_decision_count": 50925,
+  "validation_shoe_count": 500,
+  "vocabulary_tokens": [
+    "<PAD>",
+    "A",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "<HISTORY>",
+    "<CURRENT_HAND>",
+    "<PLAYER>",
+    "<DEALER>",
+    "<BET_QUERY>",
+    "<PLAY_QUERY>",
+    "<INSURANCE_QUERY>",
+    "<BET_MIN>",
+    "<BET_LOW>",
+    "<BET_MEDIUM>",
+    "<BET_HIGH>",
+    "<HIT>",
+    "<STAND>",
+    "<DOUBLE>",
+    "<SPLIT>",
+    "<SURRENDER>",
+    "<INSURANCE>",
+    "<NO_INSURANCE>"
+  ]
+}

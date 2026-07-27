@@ -1315,6 +1315,21 @@ Open `notebooks/01_blackjack_engine.ipynb` for the visual engine walkthrough or
 `notebooks/02_bet_token_pilot.ipynb` for the reproducible bet-vocabulary
 analysis. Select the same `.venv/bin/python` environment for either notebook.
 
+### Published v6 Artifacts
+
+The selected paired model weights and complete metrics are committed under
+[`models/`](models/). The versioned
+[blackjack-v6 dataset card](datasets/blackjack-v6/README.md) records the
+methodology, checksums, download commands, and sealed-test commitment. Compressed
+training and validation data are hosted in the
+[`blackjack-v6` GitHub Release](https://github.com/itsPat/card-counting-llm/releases/tag/blackjack-v6)
+so ordinary source clones remain small.
+
+Generation checkpoints, worker shards, the oracle-label SQLite cache, and test
+labels are deliberately excluded. The first three are redundant reproducible
+working state; the test labels remain sealed until the final evaluation
+protocol is frozen.
+
 To benchmark the production generator with resumable checkpoints, choose an
 output directory under the ignored `data/generated/` tree:
 
